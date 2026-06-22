@@ -1,9 +1,9 @@
 {
   "name": "shipspec",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Spec-to-ship workflow for AI-assisted software delivery.",
   "type": "module",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "keywords": [
     "ai",
@@ -32,11 +32,16 @@
   ],
   "scripts": {
     "cli": "node bin/gsd.mjs",
+    "build": "tsc --noEmit",
     "install:local": "npm link",
     "lint": "node --check src/gsd.mjs && node --check bin/gsd.mjs && node --check test/gsd.test.mjs",
     "test": "node --test",
     "test:e2e": "node --test",
-    "typecheck": "node --check src/gsd.mjs && node --check bin/gsd.mjs && node --check test/gsd.test.mjs"
+    "typecheck": "tsc --noEmit && node --check src/gsd.mjs && node --check bin/gsd.mjs && node --check test/gsd.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
   },
   "engines": {
     "node": ">=20"

@@ -4,7 +4,7 @@ import { basename, join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const DEFAULT_WORKFLOW = {
   checks: [
@@ -497,7 +497,7 @@ export async function generateExamples(root) {
     `${JSON.stringify(
       {
         name: "gsd-node-basic-example",
-        version: "0.1.0",
+        version: "0.2.0",
         type: "module",
         private: true,
         scripts: {
@@ -847,6 +847,10 @@ export async function runCli(argv, options = {}) {
     if (command === "self-test") {
       const result = await runSelfTest(cwd, { runner: options.runner });
       return cliResult(result.ok ? 0 : 1, `${formatSelfTest(result.results)}\n`);
+    }
+
+    if (command === "adapters") {
+      return cliResult(0, `${formatAdapters(listIntegrationAdapters())}\n`);
     }
 
     if (command === "desktop") {
@@ -1359,17 +1363,48 @@ function formatSelfTest(results) {
   return results.map((result) => `${result.ok ? "PASS" : "FAIL"} ${result.command}`).join("\n");
 }
 
+function listIntegrationAdapters() {
+  return [
+    {
+      name: "OpenSpec",
+      summary: "Change proposals and task checklists.",
+      paths: ["openspec/changes", "openspec/specs"],
+    },
+    {
+      name: "Superpowers",
+      summary: "Planning, TDD, and verification discipline.",
+      paths: ["docs/superpowers/plans", "docs/superpowers/specs"],
+    },
+    {
+      name: "GitHub",
+      summary: "CI, review reports, and release handoffs.",
+      paths: [".github/workflows", ".gsd/reports", ".gsd/releases"],
+    },
+    {
+      name: "Project scripts",
+      summary: "package.json scripts used for verification.",
+      paths: ["package.json scripts", ".gsd/workflow.json"],
+    },
+  ];
+}
+
+function formatAdapters(adapters) {
+  return adapters
+    .map((adapter) => [`${adapter.name}: ${adapter.summary}`, `  Paths: ${adapter.paths.join(", ")}`].join("\n"))
+    .join("\n\n");
+}
+
 function buildDesktopPackageJson() {
   return {
     name: "gsd-desktop",
-    version: "0.1.0",
+    version: "0.2.0",
     private: true,
     main: "main.js",
     scripts: {
       start: "electron .",
     },
     devDependencies: {
-      electron: "^31.0.0",
+      electron: "^42.4.1",
     },
   };
 }
@@ -1590,6 +1625,16 @@ const output = document.querySelector('#output');
 const inbox = document.querySelector('#inbox');
 const projectPath = document.querySelector('#projectPath');
 const pipeline = document.querySelector('#pipeline');
+const actionButtons = [...document.querySelectorAll('[data-command]')];
+let refreshPromise = Promise.resolve();
+let commandRunning = false;
+
+function setBusy(busy) {
+  actionButtons.forEach((button) => {
+    button.disabled = busy;
+  });
+  document.querySelector('#chooseProject').disabled = busy;
+}
 
 function renderPipeline(text = '') {
   const lower = text.toLowerCase();
@@ -1601,20 +1646,31 @@ function renderPipeline(text = '') {
 }
 
 async function run(args) {
+  if (commandRunning) return;
+  commandRunning = true;
+  setBusy(true);
   output.textContent = 'Running: gsd ' + args.join(' ') + '\\n';
-  const result = await window.gsdDesktop.runGsd(args);
-  output.textContent += (result.stdout || '') + (result.stderr || '');
-  projectPath.textContent = result.projectDir;
-  return result;
+  try {
+    const result = await window.gsdDesktop.runGsd(args);
+    output.textContent += (result.stdout || '') + (result.stderr || '');
+    projectPath.textContent = result.projectDir;
+    return result;
+  } finally {
+    commandRunning = false;
+    setBusy(false);
+  }
 }
 
 async function refresh() {
-  const project = await window.gsdDesktop.getProject();
-  projectPath.textContent = project.projectDir;
-  const spec = await window.gsdDesktop.runGsd(['spec']);
-  renderPipeline(spec.stdout || '');
-  const inboxResult = await window.gsdDesktop.runGsd(['inbox']);
-  inbox.textContent = inboxResult.stdout || 'No messages.';
+  refreshPromise = refreshPromise.then(async () => {
+    const project = await window.gsdDesktop.getProject();
+    projectPath.textContent = project.projectDir;
+    const spec = await window.gsdDesktop.runGsd(['spec']);
+    renderPipeline(spec.stdout || '');
+    const inboxResult = await window.gsdDesktop.runGsd(['inbox']);
+    inbox.textContent = inboxResult.stdout || 'No messages.';
+  });
+  return refreshPromise;
 }
 
 document.querySelector('#chooseProject').addEventListener('click', async () => {
@@ -1832,6 +1888,7 @@ function usage() {
     "  release",
     "  examples",
     "  self-test",
+    "  adapters",
     "  desktop",
     "  ui",
     "  verify [--full]",

@@ -131,8 +131,24 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 | `gsd ci` | Generate a GitHub Actions workflow from configured checks. |
 | `gsd examples` | Generate example projects. |
 | `gsd self-test` | Run ShipSpec health checks. |
+| `gsd adapters` | List the OpenSpec, Superpowers, GitHub, and project-script integration points. |
 | `gsd ui` | Generate a static pixel dashboard under `.gsd/ui/index.html`. |
 | `gsd desktop` | Generate an Electron desktop app under `apps/desktop/`. |
+
+## Adapters
+
+ShipSpec connects tools through a small adapter model. The current adapters are:
+
+- OpenSpec: `openspec/changes` proposals and task checklists.
+- Superpowers: `docs/superpowers` planning, TDD, and verification discipline.
+- GitHub: generated CI, review reports, and release handoffs.
+- Project scripts: `package.json` scripts used by `gsd verify`.
+
+List them from any project:
+
+```bash
+gsd adapters
+```
 
 ## Desktop App
 
@@ -187,7 +203,10 @@ gsd ui
 npm test
 npm run lint
 npm run typecheck
+npm run build
 ```
+
+The core adapter layer is written in TypeScript under `src/adapters/`. The current CLI wrapper remains `bin/gsd.mjs`, so existing `gsd` usage keeps working while the internals move toward typed modules.
 
 Generate the desktop wrapper from source:
 
@@ -199,4 +218,16 @@ Generate the static dashboard from source:
 
 ```bash
 node bin/gsd.mjs ui
+```
+
+## Publishing Notes
+
+The package is prepared for npm publishing as `shipspec`, with the executable command exposed as `gsd`.
+
+Before publishing:
+
+```bash
+npm test
+npm run typecheck
+npm publish --access public
 ```

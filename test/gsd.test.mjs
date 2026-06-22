@@ -129,7 +129,7 @@ test("runCli supports help and version for an installable CLI", async () => {
 
   const version = await runCli(["--version"], { cwd: root });
   assert.equal(version.exitCode, 0);
-  assert.match(version.stdout, /0\.1\.0/);
+  assert.match(version.stdout, /0\.2\.0/);
 });
 
 test("generateExamples creates a node-basic example project with ShipSpec artifacts", async () => {
@@ -218,6 +218,55 @@ test("runCli desktop prints generated desktop app path", async () => {
   assert.match(result.stdout, /apps\/desktop/);
 });
 
+test("package is ready for TypeScript core and npm publishing", async () => {
+  const root = join(import.meta.dirname, "..");
+
+  const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+
+  assert.equal(packageJson.private, false);
+  assert.equal(packageJson.scripts.build, "tsc --noEmit");
+  assert.equal(packageJson.scripts.typecheck, "tsc --noEmit && node --check src/gsd.mjs && node --check bin/gsd.mjs && node --check test/gsd.test.mjs");
+  assert.equal(packageJson.devDependencies.typescript, "^5.5.0");
+  assert.equal(packageJson.devDependencies["@types/node"], "^20.14.0");
+  assert.equal(await exists(join(root, "tsconfig.json")), true);
+  assert.equal(await exists(join(root, "src", "adapters", "index.ts")), true);
+  assert.equal(await exists(join(root, "src", "adapters", "openspec.ts")), true);
+  assert.equal(await exists(join(root, "src", "adapters", "superpowers.ts")), true);
+  assert.equal(await exists(join(root, "src", "adapters", "github.ts")), true);
+  assert.equal(await exists(join(root, "src", "adapters", "project-scripts.ts")), true);
+});
+
+test("TypeScript adapters describe ShipSpec integration points", async () => {
+  const root = join(import.meta.dirname, "..");
+
+  const index = await readFile(join(root, "src", "adapters", "index.ts"), "utf8");
+  const openspec = await readFile(join(root, "src", "adapters", "openspec.ts"), "utf8");
+  const superpowers = await readFile(join(root, "src", "adapters", "superpowers.ts"), "utf8");
+  const github = await readFile(join(root, "src", "adapters", "github.ts"), "utf8");
+  const scripts = await readFile(join(root, "src", "adapters", "project-scripts.ts"), "utf8");
+
+  assert.match(index, /export type ShipSpecAdapter/);
+  assert.match(index, /export function listAdapters/);
+  assert.match(openspec, /openspec\/changes/);
+  assert.match(superpowers, /docs\/superpowers/);
+  assert.match(github, /\.github\/workflows/);
+  assert.match(scripts, /package\.json scripts/);
+});
+
+test("runCli adapters lists integration points", async () => {
+  const root = await tempRoot();
+
+  const result = await runCli(["adapters"], { cwd: root });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /OpenSpec/);
+  assert.match(result.stdout, /Superpowers/);
+  assert.match(result.stdout, /GitHub/);
+  assert.match(result.stdout, /Project scripts/);
+  assert.match(result.stdout, /openspec\/changes/);
+  assert.match(result.stdout, /docs\/superpowers/);
+});
+
 test("generateUiDashboard writes a single-page pixel dashboard", async () => {
   const root = await tempRoot();
   await execFileAsync("git", ["init"], { cwd: root });
@@ -246,6 +295,20 @@ test("generateUiDashboard writes a single-page pixel dashboard", async () => {
   assert.match(html, /Pixelify Sans/);
   assert.match(html, /tester/);
   assert.match(html, /feature\.js/);
+});
+
+test("generateDesktopApp writes a renderer that serializes command refreshes", async () => {
+  const root = await tempRoot();
+
+  await generateDesktopApp(root);
+
+  const renderer = await readFile(join(root, "apps", "desktop", "renderer", "app.js"), "utf8");
+  assert.match(renderer, /let refreshPromise = Promise\.resolve\(\);/);
+  assert.match(renderer, /let commandRunning = false;/);
+  assert.match(renderer, /function setBusy\(busy\)/);
+  assert.match(renderer, /button\.disabled = busy/);
+  assert.match(renderer, /refreshPromise = refreshPromise\.then/);
+  assert.match(renderer, /if \(commandRunning\) return;/);
 });
 
 test("runCli ui prints generated dashboard path", async () => {
