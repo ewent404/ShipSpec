@@ -17,6 +17,18 @@ gsd
 - Generate review, release, and done notes from the same project state.
 - Coordinate planner, builder, tester, reviewer, and release handoffs.
 
+## Demo Project
+
+Pixel Quest Board is a small demo that shows ShipSpec coordinating a real feature:
+
+```text
+Spec -> Codex implementation -> full verification -> evidence -> report -> done dashboard
+```
+
+Demo repo:
+
+https://github.com/ewent404/PixelQuestBoard
+
 ## Requirements
 
 - Node.js 20 or newer
