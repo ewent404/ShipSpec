@@ -670,6 +670,7 @@ export async function generateUiDashboard(root) {
   const reportExists = activeChange ? await exists(join(root, ".gsd", "reports", `${activeChange.slug}.md`)) : false;
   const releaseExists = activeChange ? await exists(join(root, ".gsd", "releases", `${activeChange.slug}.md`)) : false;
   const loop = activeChange ? await getLoopUiState(root, activeChange.slug) : null;
+  const reasoning = activeChange ? await getReasoningUiState(root, activeChange.slug) : null;
   const uiPath = join(root, ".gsd", "ui", "index.html");
 
   await mkdir(join(root, ".gsd", "ui"), { recursive: true });
@@ -686,6 +687,7 @@ export async function generateUiDashboard(root) {
       reportExists,
       releaseExists,
       loop,
+      reasoning,
     }),
   );
 
@@ -1627,6 +1629,18 @@ async function getLoopUiState(root, slug) {
     reflection: await exists(reflectionPath),
     learned: await exists(lessonPath),
     nextActions: extractMarkdownBulletsAfterHeading(loopContent, "Next Actions").slice(0, 4),
+  };
+}
+
+async function getReasoningUiState(root, slug) {
+  const reasoningPath = join(root, ".gsd", "reasoning", `${slug}.md`);
+  const reasoningContent = await readTextSnippetIfExists(reasoningPath, 16_000);
+
+  return {
+    present: Boolean(reasoningContent),
+    recommendedWorkflow: extractMarkdownBulletsAfterHeading(reasoningContent, "Recommended Workflow").slice(0, 4),
+    requiredVerification: extractMarkdownBulletsAfterHeading(reasoningContent, "Required Verification").slice(0, 4),
+    risks: extractMarkdownBulletsAfterHeading(reasoningContent, "Risks").slice(0, 3),
   };
 }
 
@@ -2738,6 +2752,23 @@ function buildUiHtml(model) {
         <h2>Next Actions</h2>
         <div class="files">
           ${(model.loop?.nextActions?.length ? model.loop.nextActions : ["Run gsd loop to generate next actions."]).map((action) => `<div class="row">${escapeHtml(action)}</div>`).join("")}
+        </div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="panel">
+        <h2>Adaptive Reasoning</h2>
+        <div class="files">
+          <div class="row">Reasoning: ${model.reasoning?.present ? "present" : "missing"}</div>
+          ${(model.reasoning?.risks?.length ? model.reasoning.risks : ["Risks: none recorded."]).map((risk) => `<div class="row">${escapeHtml(risk)}</div>`).join("")}
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Reasoning Plan</h2>
+        <div class="files">
+          ${(model.reasoning?.recommendedWorkflow?.length ? model.reasoning.recommendedWorkflow : ["Run gsd reason to generate adaptive workflow."]).map((action) => `<div class="row">${escapeHtml(action)}</div>`).join("")}
+          ${(model.reasoning?.requiredVerification?.length ? model.reasoning.requiredVerification : []).map((check) => `<div class="row">${escapeHtml(check)}</div>`).join("")}
         </div>
       </div>
     </section>

@@ -720,6 +720,25 @@ test("generateUiDashboard shows self-improving loop state", async () => {
   assert.match(html, /Run `gsd report`/);
 });
 
+test("generateUiDashboard shows adaptive reasoning state", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Dashboard Reasoning Trail");
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({ scripts: { test: "node --test", "test:e2e": "playwright test" } }, null, 2),
+  );
+  await runCli(["reason"], { cwd: root });
+
+  await generateUiDashboard(root);
+
+  const html = await readFile(join(root, ".gsd", "ui", "index.html"), "utf8");
+  assert.match(html, /Adaptive Reasoning/);
+  assert.match(html, /Reasoning: present/);
+  assert.match(html, /gsd loop/);
+  assert.match(html, /npm run test:e2e/);
+});
+
 test("generateDesktopApp writes a renderer that serializes command refreshes", async () => {
   const root = await tempRoot();
 
