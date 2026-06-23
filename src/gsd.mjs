@@ -1141,6 +1141,39 @@ export async function runOperation(root, request = "", options = {}) {
   };
 }
 
+export async function generatePlanPrompt(root) {
+  await initWorkspace(root);
+  const activeChange = await requireActiveChange(root);
+  const slug = activeChange.slug;
+  const promptPath = join(root, ".gsd", "prompts", `${slug}.md`);
+  const contextFiles = [
+    `openspec/changes/${slug}/proposal.md`,
+    `openspec/changes/${slug}/tasks.md`,
+    `.gsd/reasoning/${slug}.md`,
+    `.gsd/operations/${slug}.md`,
+    `.agent/room/${slug}/handoff.md`,
+  ];
+  const existingContextFiles = [];
+
+  for (const relativePath of contextFiles) {
+    if (await exists(join(root, relativePath))) existingContextFiles.push(relativePath);
+  }
+
+  const prompt = buildPlanPromptMarkdown({ activeChange, contextFiles: existingContextFiles });
+
+  await mkdir(join(root, ".gsd", "prompts"), { recursive: true });
+  await writeFile(promptPath, prompt);
+
+  return {
+    ok: true,
+    activeChange,
+    prompt,
+    promptPath,
+    contextFiles: existingContextFiles,
+    message: `Prompt written to .gsd/prompts/${slug}.md`,
+  };
+}
+
 export async function getMemorySummary(root) {
   await initWorkspace(root);
   const projectMemory = await readTextSnippetIfExists(join(root, ".agent", "memory.md"), 16_000);
@@ -1461,6 +1494,12 @@ export async function runCli(argv, options = {}) {
       const result = await runOperation(cwd, request, { dryRun });
       if (json) return cliResult(result.ok ? 0 : 1, `${JSON.stringify(result, null, 2)}\n`);
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
+    if (command === "prompt") {
+      const result = await generatePlanPrompt(cwd);
+      if (rest.includes("--json")) return cliResult(0, `${JSON.stringify(result, null, 2)}\n`);
+      return cliResult(0, `${result.prompt}\n`);
     }
 
     if (command === "deliver") {
@@ -2407,6 +2446,45 @@ function buildOperationMarkdown({ activeChange, delivery, reasoning, loop, ui, o
   ].join("\n");
 }
 
+function buildPlanPromptMarkdown({ activeChange, contextFiles }) {
+  return [
+    "Use $shipspec.",
+    "",
+    `Active change: ${activeChange.title}`,
+    `Slug: ${activeChange.slug}`,
+    "",
+    "You are in Codex Plan mode. Use ShipSpec as the source of truth and prepare a plan before coding.",
+    "",
+    "Read these ShipSpec files:",
+    "",
+    ...formatBulletList(contextFiles, "No ShipSpec context files found."),
+    "",
+    "In Codex Plan mode:",
+    "",
+    "- Summarize the requested scope in plain language.",
+    "- Identify likely affected files and project areas.",
+    "- Propose implementation steps.",
+    "- Propose focused tests and verification commands.",
+    "- Call out risks, assumptions, and open questions.",
+    "- Wait for approval before coding.",
+    "",
+    "Safety boundaries:",
+    "",
+    "- Do not deploy.",
+    "- Do not access secrets.",
+    "- Do not make unrelated refactors.",
+    "- Do not edit generated ShipSpec evidence by hand.",
+    "- Keep changes scoped to the active ShipSpec change.",
+    "",
+    "After implementation, verify with:",
+    "",
+    "- gsd verify --full",
+    "- gsd validate --ready",
+    "- gsd report",
+    "",
+  ].join("\n");
+}
+
 function buildDesktopPackageJson() {
   return {
     name: "gsd-desktop",
@@ -2989,6 +3067,7 @@ function usage() {
     "  memory [--json]",
     "  reason [--json]",
     "  operate [--dry-run] [--json] <request>",
+    "  prompt [--json]",
     "  deliver <request>",
     "  desktop",
     "  ui",

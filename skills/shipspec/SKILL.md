@@ -44,6 +44,14 @@ gsd operate "<user request or ticket title>"
 
 `gsd operate` prepares the adaptive package, runs reasoning, runs one safe verify/reflect/learn loop, refreshes `gsd ui`, and writes `.gsd/operations/<change>.md`. It does not edit code or deploy.
 
+When the user wants Codex Plan mode to think before coding, generate the active change prompt:
+
+```bash
+gsd prompt
+```
+
+Use the generated prompt as the Plan mode handoff. ShipSpec owns facts and files; Codex Plan mode owns reasoning and the implementation plan.
+
 If a change already exists but needs missing artifacts:
 
 ```bash

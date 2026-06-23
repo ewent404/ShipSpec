@@ -17,6 +17,7 @@ import {
   generateAgentInstructions,
   generateCiWorkflow,
   generateRelease,
+  generatePlanPrompt,
   generateReasoning,
   getMemorySummary,
   getSpecStatus,
@@ -572,6 +573,50 @@ test("runCli operate exposes safe operator command with json output", async () =
 
   const help = await runCli(["--help"], { cwd: root });
   assert.match(help.stdout, /operate/);
+});
+
+test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec state", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+  await runOperation(root, "Add Prompt Bridge");
+
+  const result = await generatePlanPrompt(root);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.activeChange.slug, "add-prompt-bridge");
+  assert.equal(await exists(join(root, ".gsd", "prompts", "add-prompt-bridge.md")), true);
+  assert.match(result.prompt, /Use \$shipspec\./);
+  assert.match(result.prompt, /Codex Plan mode/);
+  assert.match(result.prompt, /openspec\/changes\/add-prompt-bridge\/proposal\.md/);
+  assert.match(result.prompt, /\.gsd\/reasoning\/add-prompt-bridge\.md/);
+  assert.match(result.prompt, /\.gsd\/operations\/add-prompt-bridge\.md/);
+  assert.match(result.prompt, /Wait for approval before coding/);
+  assert.match(result.prompt, /gsd verify --full/);
+});
+
+test("runCli prompt prints Plan mode prompt and supports json output", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Prompt Cli");
+  await generateReasoning(root);
+
+  const text = await runCli(["prompt"], { cwd: root });
+  assert.equal(text.exitCode, 0);
+  assert.match(text.stdout, /Use \$shipspec\./);
+  assert.match(text.stdout, /Active change: Prompt Cli/);
+
+  const json = await runCli(["prompt", "--json"], { cwd: root });
+  assert.equal(json.exitCode, 0);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.activeChange.slug, "prompt-cli");
+  assert.equal(parsed.promptPath.endsWith(".gsd/prompts/prompt-cli.md"), true);
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /prompt/);
 });
 
 test("getMemorySummary reads lessons, patterns, reflections, and loop actions", async () => {
