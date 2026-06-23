@@ -248,6 +248,9 @@ test("package is ready for TypeScript core and npm publishing", async () => {
   const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 
   assert.equal(packageJson.private, false);
+  assert.equal(packageJson.files.includes("skills"), true);
+  assert.equal(packageJson.files.includes("apps/desktop"), false);
+  assert.equal(packageJson.files.includes("apps/desktop/renderer"), true);
   assert.equal(packageJson.scripts.build, "tsc --noEmit");
   assert.equal(packageJson.scripts.typecheck, "tsc --noEmit && node --check src/gsd.mjs && node --check bin/gsd.mjs && node --check test/gsd.test.mjs");
   assert.equal(packageJson.devDependencies.typescript, "^5.5.0");

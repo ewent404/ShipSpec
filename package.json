@@ -23,8 +23,12 @@
   "files": [
     "bin",
     "src",
+    "skills",
     "examples",
-    "apps/desktop",
+    "apps/desktop/main.js",
+    "apps/desktop/package.json",
+    "apps/desktop/preload.js",
+    "apps/desktop/renderer",
     "CHANGELOG.md",
     "LICENSE",
     "README.md",
