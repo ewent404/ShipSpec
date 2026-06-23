@@ -8,6 +8,7 @@
 - Added `gsd memory` for read-only memory, pattern, lesson, reflection, and loop inspection.
 - Added `gsd reason` for deterministic local reasoning from spec, workflow, project signals, and memory.
 - Added `gsd deliver --adaptive` to include reasoning during initial package creation.
+- Added `gsd operate` for a safe delivery control loop that writes operation reports without editing code.
 - Kept reflection local-only, bounded, and free of raw verification log copying.
 
 ## 0.3.1

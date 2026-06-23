@@ -120,6 +120,14 @@ gsd reason
 gsd audit
 ```
 
+For a safe one-command control loop, use:
+
+```bash
+gsd operate "JIRA-123 Add invoice export"
+```
+
+`gsd operate` prepares the adaptive package when a request is provided, runs reasoning, runs one safe verification/reflection loop, refreshes the pixel dashboard, and writes `.gsd/operations/<change>.md`. It does not edit code, deploy, or call external services.
+
 The intended agent workflow is:
 
 ```text
@@ -221,6 +229,7 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 | `gsd loop` | Run one safe verify, reflect, and learn pass without editing code. |
 | `gsd memory [--json]` | Inspect project memory, patterns, lessons, reflections, and loop actions. |
 | `gsd reason [--json]` | Generate local adaptive reasoning from spec, workflow, project signals, and memory. |
+| `gsd operate [--dry-run] [--json] <request>` | Run the safe delivery control loop and write an operation report without editing code. |
 | `gsd deliver <request>` | Prepare intake, spec, contract, room, and validation in one command. |
 | `gsd ui` | Generate a static pixel dashboard under `.gsd/ui/index.html`. |
 | `gsd desktop` | Generate an Electron desktop app under `apps/desktop/`. |

@@ -23,6 +23,7 @@ import {
   getDiffSummary,
   getStatus,
   initWorkspace,
+  runOperation,
   runLoop,
   listAgentMessages,
   postAgentMessage,
@@ -526,6 +527,53 @@ test("runCli loop exposes the one-pass self-improvement loop", async () => {
   assert.match(help.stdout, /loop/);
 });
 
+test("runOperation orchestrates safe delivery control loop", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+
+  const result = await runOperation(root, "Add Operator Panel");
+
+  assert.equal(result.ok, false);
+  assert.equal(result.operation.learned, false);
+  assert.equal(result.activeChange.slug, "add-operator-panel");
+  assert.equal(await exists(join(root, ".gsd", "operations", "add-operator-panel.md")), true);
+  assert.equal(await exists(join(root, ".gsd", "reasoning", "add-operator-panel.md")), true);
+  assert.equal(await exists(join(root, ".gsd", "loops", "add-operator-panel.md")), true);
+  assert.equal(await exists(join(root, ".gsd", "ui", "index.html")), true);
+
+  const report = await readFile(join(root, ".gsd", "operations", "add-operator-panel.md"), "utf8");
+  assert.match(report, /# Operation: Add Operator Panel/);
+  assert.match(report, /Mode: safe-control-loop/);
+  assert.match(report, /No code edits were made/);
+  assert.match(report, /gsd loop/);
+});
+
+test("runCli operate exposes safe operator command with json output", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+
+  const text = await runCli(["operate", "Add CLI Operator"], { cwd: root });
+  assert.equal(text.exitCode, 1);
+  assert.match(text.stdout, /Operation stopped with next action/);
+
+  const json = await runCli(["operate", "Add CLI Operator", "--json"], { cwd: root });
+  assert.equal(json.exitCode, 1);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.activeChange.slug, "add-cli-operator");
+  assert.equal(parsed.operation.operationPath.endsWith(".gsd/operations/add-cli-operator.md"), true);
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /operate/);
+});
+
 test("getMemorySummary reads lessons, patterns, reflections, and loop actions", async () => {
   const root = await tempRoot();
   await initWorkspace(root);
@@ -737,6 +785,24 @@ test("generateUiDashboard shows adaptive reasoning state", async () => {
   assert.match(html, /Reasoning: present/);
   assert.match(html, /gsd loop/);
   assert.match(html, /npm run test:e2e/);
+});
+
+test("generateUiDashboard shows operator state", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+  await runOperation(root, "Dashboard Operator Trail");
+
+  await generateUiDashboard(root);
+
+  const html = await readFile(join(root, ".gsd", "ui", "index.html"), "utf8");
+  assert.match(html, /Operator/);
+  assert.match(html, /Operation: present/);
+  assert.match(html, /safe-control-loop/);
+  assert.match(html, /No code edits were made/);
 });
 
 test("generateDesktopApp writes a renderer that serializes command refreshes", async () => {

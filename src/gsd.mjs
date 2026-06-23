@@ -671,6 +671,7 @@ export async function generateUiDashboard(root) {
   const releaseExists = activeChange ? await exists(join(root, ".gsd", "releases", `${activeChange.slug}.md`)) : false;
   const loop = activeChange ? await getLoopUiState(root, activeChange.slug) : null;
   const reasoning = activeChange ? await getReasoningUiState(root, activeChange.slug) : null;
+  const operation = activeChange ? await getOperationUiState(root, activeChange.slug) : null;
   const uiPath = join(root, ".gsd", "ui", "index.html");
 
   await mkdir(join(root, ".gsd", "ui"), { recursive: true });
@@ -688,6 +689,7 @@ export async function generateUiDashboard(root) {
       releaseExists,
       loop,
       reasoning,
+      operation,
     }),
   );
 
@@ -1077,6 +1079,68 @@ export async function runLoop(root) {
   };
 }
 
+export async function runOperation(root, request = "", options = {}) {
+  await initWorkspace(root);
+  const title = request.trim();
+
+  if (options.dryRun) {
+    const status = await getStatus(root);
+    const previewChange = title ? { title, slug: slugify(title) } : status.activeChange;
+    if (!previewChange) {
+      return {
+        ok: false,
+        dryRun: true,
+        message: "Usage: gsd operate [--dry-run] [--json] <request title or ticket link>",
+      };
+    }
+
+    return {
+      ok: true,
+      dryRun: true,
+      activeChange: previewChange,
+      message: "Operation dry run: safe control loop previewed",
+      steps: ["gsd deliver --adaptive", "gsd reason", "gsd loop", "gsd ui"],
+    };
+  }
+
+  const status = await getStatus(root);
+  if (!title && !status.activeChange) {
+    return {
+      ok: false,
+      message: "Usage: gsd operate [--dry-run] [--json] <request title or ticket link>",
+    };
+  }
+
+  const delivery = title ? await prepareDelivery(root, title, { adaptive: true }) : null;
+  const activeChange = await requireActiveChange(root);
+  const reasoning = delivery?.reasoning ?? (await generateReasoning(root));
+  const loop = await runLoop(root);
+  const ui = await generateUiDashboard(root);
+  const operationPath = join(root, ".gsd", "operations", `${activeChange.slug}.md`);
+  const nextAction = loop.nextActions[0] ?? "No next action needed.";
+  const operation = {
+    operationPath,
+    learned: loop.learned,
+    nextAction,
+  };
+
+  await mkdir(join(root, ".gsd", "operations"), { recursive: true });
+  await writeFile(operationPath, buildOperationMarkdown({ activeChange, delivery, reasoning, loop, ui, operation }));
+
+  return {
+    ok: loop.ok,
+    activeChange,
+    delivery,
+    reasoning,
+    loop,
+    ui,
+    operation,
+    message: loop.ok
+      ? `Operation completed and learned from .gsd/operations/${activeChange.slug}.md`
+      : `Operation stopped with next action in .gsd/operations/${activeChange.slug}.md`,
+  };
+}
+
 export async function getMemorySummary(root) {
   await initWorkspace(root);
   const projectMemory = await readTextSnippetIfExists(join(root, ".agent", "memory.md"), 16_000);
@@ -1390,6 +1454,15 @@ export async function runCli(argv, options = {}) {
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
+    if (command === "operate") {
+      const json = rest.includes("--json");
+      const dryRun = rest.includes("--dry-run");
+      const request = rest.filter((part) => part !== "--json" && part !== "--dry-run").join(" ");
+      const result = await runOperation(cwd, request, { dryRun });
+      if (json) return cliResult(result.ok ? 0 : 1, `${JSON.stringify(result, null, 2)}\n`);
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
     if (command === "deliver") {
       const adaptive = rest.includes("--adaptive");
       const request = rest.filter((part) => part !== "--adaptive").join(" ");
@@ -1644,6 +1717,18 @@ async function getReasoningUiState(root, slug) {
   };
 }
 
+async function getOperationUiState(root, slug) {
+  const operationPath = join(root, ".gsd", "operations", `${slug}.md`);
+  const operationContent = await readTextSnippetIfExists(operationPath, 16_000);
+
+  return {
+    present: Boolean(operationContent),
+    mode: extractMarkdownField(operationContent, "Mode") ?? "missing",
+    nextActions: extractMarkdownBulletsAfterHeading(operationContent, "Next Action").slice(0, 3),
+    safety: extractMarkdownBulletsAfterHeading(operationContent, "Safety").slice(0, 3),
+  };
+}
+
 async function readMemoryArtifacts(root, relativeDir) {
   const dir = join(root, relativeDir);
   try {
@@ -1686,6 +1771,13 @@ function extractMarkdownBulletsAfterHeading(markdown, heading) {
   }
 
   return bullets;
+}
+
+function extractMarkdownField(markdown, field) {
+  if (!markdown) return null;
+  const prefix = `${field}:`;
+  const line = markdown.split("\n").find((candidate) => candidate.startsWith(prefix));
+  return line ? line.slice(prefix.length).trim() : null;
 }
 
 async function readEvidenceSummary(root, slug) {
@@ -2269,6 +2361,52 @@ function buildReasoningMarkdown(reasoning, detection) {
   ].join("\n");
 }
 
+function buildOperationMarkdown({ activeChange, delivery, reasoning, loop, ui, operation }) {
+  return [
+    `# Operation: ${activeChange.title}`,
+    "",
+    "Mode: safe-control-loop",
+    `Change: ${activeChange.slug}`,
+    `Generated: ${new Date().toISOString()}`,
+    "",
+    "## Package",
+    "",
+    delivery
+      ? `- ${delivery.message}`
+      : "- Existing active change used; no new package was created.",
+    "",
+    "## Reasoning",
+    "",
+    `- ${reasoning.message}`,
+    "",
+    "## Loop",
+    "",
+    `- Result: ${loop.ok ? "ready" : "needs attention"}`,
+    `- Learned: ${operation.learned ? "yes" : "no"}`,
+    `- Report: .gsd/loops/${activeChange.slug}.md`,
+    "",
+    "## Dashboard",
+    "",
+    `- ${ui.message}`,
+    "",
+    "## Next Action",
+    "",
+    ...formatBulletList([operation.nextAction], "No next action needed."),
+    "",
+    "## Commands",
+    "",
+    ...formatBulletList(["gsd reason", "gsd loop", "gsd ui", "gsd report"], "No commands recorded."),
+    "",
+    "## Safety",
+    "",
+    "- No code edits were made.",
+    "- No deployment was attempted.",
+    "- No network calls were made by the operate command.",
+    "- Human approval is required before implementation or release.",
+    "",
+  ].join("\n");
+}
+
 function buildDesktopPackageJson() {
   return {
     name: "gsd-desktop",
@@ -2773,6 +2911,23 @@ function buildUiHtml(model) {
       </div>
     </section>
 
+    <section class="split">
+      <div class="panel">
+        <h2>Operator</h2>
+        <div class="files">
+          <div class="row">Operation: ${model.operation?.present ? "present" : "missing"}</div>
+          <div class="row">Mode: ${escapeHtml(model.operation?.mode ?? "missing")}</div>
+          ${(model.operation?.safety?.length ? model.operation.safety : ["No operation safety notes recorded."]).map((item) => `<div class="row">${escapeHtml(item)}</div>`).join("")}
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Operator Next</h2>
+        <div class="files">
+          ${(model.operation?.nextActions?.length ? model.operation.nextActions : ["Run gsd operate to generate the safe control loop."]).map((action) => `<div class="row">${escapeHtml(action)}</div>`).join("")}
+        </div>
+      </div>
+    </section>
+
     <p class="footer">Generated by ShipSpec. Static single-page dashboard. Refresh with <span class="cmd">gsd ui</span>.</p>
   </main>
 </body>
@@ -2833,6 +2988,7 @@ function usage() {
     "  loop",
     "  memory [--json]",
     "  reason [--json]",
+    "  operate [--dry-run] [--json] <request>",
     "  deliver <request>",
     "  desktop",
     "  ui",

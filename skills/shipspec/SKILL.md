@@ -36,6 +36,14 @@ If there is no active change, create the ShipSpec package from the user's reques
 gsd deliver --adaptive "<user request or ticket title>"
 ```
 
+For a safe operator-style control loop, use:
+
+```bash
+gsd operate "<user request or ticket title>"
+```
+
+`gsd operate` prepares the adaptive package, runs reasoning, runs one safe verify/reflect/learn loop, refreshes `gsd ui`, and writes `.gsd/operations/<change>.md`. It does not edit code or deploy.
+
 If a change already exists but needs missing artifacts:
 
 ```bash
