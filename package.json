@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ewent404/ShipSpec.git"
+    "url": "git+https://github.com/shipspec-dev/ShipSpec.git"
   },
   "bin": {
     "gsd": "bin/gsd.mjs"

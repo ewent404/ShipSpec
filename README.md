@@ -27,7 +27,7 @@ Spec -> Codex implementation -> full verification -> evidence -> report -> done 
 
 Demo repo:
 
-https://github.com/ewent404/PixelQuestBoard
+https://github.com/shipspec-dev/PixelQuestBoard
 
 ## Requirements
 
