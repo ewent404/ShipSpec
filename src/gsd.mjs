@@ -1071,6 +1071,26 @@ export async function runLoop(root) {
   };
 }
 
+export async function getMemorySummary(root) {
+  await initWorkspace(root);
+  const projectMemory = await readTextSnippetIfExists(join(root, ".agent", "memory.md"), 16_000);
+  const projectPatterns = await readTextSnippetIfExists(join(root, ".gsd", "patterns", "project.md"), 16_000);
+  const lessons = await readMemoryArtifacts(root, join(".gsd", "lessons"));
+  const reflections = await readMemoryArtifacts(root, join(".gsd", "reflections"));
+  const loops = await readMemoryArtifacts(root, join(".gsd", "loops"));
+
+  return {
+    projectMemory,
+    projectPatterns,
+    lessons,
+    reflections,
+    loops: loops.map((loop) => ({
+      ...loop,
+      nextActions: extractMarkdownBulletsAfterHeading(loop.summary, "Next Actions").slice(0, 5),
+    })),
+  };
+}
+
 export async function verifyChange(root, options = {}) {
   const activeChange = await requireActiveChange(root);
   const workflow = await readWorkflow(root);
@@ -1313,6 +1333,12 @@ export async function runCli(argv, options = {}) {
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
+    if (command === "memory") {
+      const result = await getMemorySummary(cwd);
+      if (rest.includes("--json")) return cliResult(0, `${JSON.stringify(result, null, 2)}\n`);
+      return cliResult(0, `${formatMemorySummary(result)}\n`);
+    }
+
     if (command === "deliver") {
       const result = await prepareDelivery(cwd, rest.join(" "));
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
@@ -1551,6 +1577,35 @@ async function getLoopUiState(root, slug) {
     learned: await exists(lessonPath),
     nextActions: extractMarkdownBulletsAfterHeading(loopContent, "Next Actions").slice(0, 4),
   };
+}
+
+async function readMemoryArtifacts(root, relativeDir) {
+  const dir = join(root, relativeDir);
+  try {
+    const files = (await readdir(dir)).filter((file) => file.endsWith(".md")).sort().reverse().slice(0, 5);
+    const artifacts = [];
+
+    for (const file of files) {
+      const path = join(dir, file);
+      const content = await readTextSnippetIfExists(path, 12_000);
+      artifacts.push({
+        slug: file.replace(/\.md$/, ""),
+        path: join(relativeDir, file),
+        title: readMarkdownTitle(content) ?? file.replace(/\.md$/, ""),
+        summary: content,
+      });
+    }
+
+    return artifacts;
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+function readMarkdownTitle(markdown) {
+  const line = markdown.split("\n").find((candidate) => candidate.startsWith("# "));
+  return line ? line.slice(2).trim() : null;
 }
 
 function extractMarkdownBulletsAfterHeading(markdown, heading) {
@@ -1984,6 +2039,49 @@ function formatAuditTrail(result) {
     ...result.checks.map((check) => `${check.ok ? "PASS" : "WAIT"} ${check.name}`),
   ];
   return lines.join("\n");
+}
+
+function formatMemorySummary(summary) {
+  return [
+    "Project Memory",
+    "",
+    summary.projectMemory.trim() ? trimForDisplay(summary.projectMemory, 900) : "No project memory recorded.",
+    "",
+    "Project Patterns",
+    "",
+    summary.projectPatterns.trim() ? trimForDisplay(summary.projectPatterns, 900) : "No project patterns recorded.",
+    "",
+    "Recent Lessons",
+    "",
+    ...formatArtifactRows(summary.lessons),
+    "",
+    "Recent Reflections",
+    "",
+    ...formatArtifactRows(summary.reflections),
+    "",
+    "Recent Loop Next Actions",
+    "",
+    ...formatLoopActionRows(summary.loops),
+  ].join("\n");
+}
+
+function formatArtifactRows(artifacts) {
+  if (artifacts.length === 0) return ["- None recorded."];
+  return artifacts.map((artifact) => `- ${artifact.slug}: ${artifact.title}`);
+}
+
+function formatLoopActionRows(loops) {
+  if (loops.length === 0) return ["- None recorded."];
+  return loops.flatMap((loop) => {
+    const actions = loop.nextActions.length ? loop.nextActions : ["No next action recorded."];
+    return [`- ${loop.slug}`, ...actions.map((action) => `  - ${action}`)];
+  });
+}
+
+function trimForDisplay(value, maxLength) {
+  const text = value.trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}\n...`;
 }
 
 function buildDesktopPackageJson() {
@@ -2531,6 +2629,7 @@ function usage() {
     "  reflect",
     "  learn",
     "  loop",
+    "  memory [--json]",
     "  deliver <request>",
     "  desktop",
     "  ui",

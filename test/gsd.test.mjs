@@ -17,6 +17,7 @@ import {
   generateAgentInstructions,
   generateCiWorkflow,
   generateRelease,
+  getMemorySummary,
   getSpecStatus,
   getDiffSummary,
   getStatus,
@@ -505,6 +506,48 @@ test("runCli loop exposes the one-pass self-improvement loop", async () => {
 
   const help = await runCli(["--help"], { cwd: root });
   assert.match(help.stdout, /loop/);
+});
+
+test("getMemorySummary reads lessons, patterns, reflections, and loop actions", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Memory Inspector");
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+  await runCli(["loop"], { cwd: root });
+  await learnFromChange(root);
+
+  const summary = await getMemorySummary(root);
+
+  assert.equal(summary.lessons.length, 1);
+  assert.equal(summary.reflections.length, 1);
+  assert.equal(summary.loops.length, 1);
+  assert.match(summary.projectMemory, /memory-inspector/);
+  assert.match(summary.projectPatterns, /Memory Inspector/);
+  assert.equal(summary.loops[0].nextActions.some((action) => action.includes("gsd report")), true);
+});
+
+test("runCli memory prints memory summary and supports json output", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Memory Cli");
+  await learnFromChange(root);
+
+  const text = await runCli(["memory"], { cwd: root });
+  assert.equal(text.exitCode, 0);
+  assert.match(text.stdout, /Project Memory/);
+  assert.match(text.stdout, /Recent Lessons/);
+  assert.match(text.stdout, /memory-cli/);
+
+  const json = await runCli(["memory", "--json"], { cwd: root });
+  assert.equal(json.exitCode, 0);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.lessons[0].slug, "memory-cli");
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /memory/);
 });
 
 test("generateUiDashboard writes a single-page pixel dashboard", async () => {
