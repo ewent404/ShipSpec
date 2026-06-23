@@ -297,6 +297,34 @@ test("generateUiDashboard writes a single-page pixel dashboard", async () => {
   assert.match(html, /feature\.js/);
 });
 
+test("generateUiDashboard shows committed files when working tree is clean", async () => {
+  const root = await tempRoot();
+  await execFileAsync("git", ["init"], { cwd: root });
+  await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: root });
+  await execFileAsync("git", ["config", "user.name", "Test User"], { cwd: root });
+  await initWorkspace(root);
+  await startChange(root, "Committed UI Files");
+  await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "node --test" } }, null, 2));
+  await mkdir(join(root, "src"));
+  await writeFile(join(root, "src", "feature.js"), "export const shipped = true;\n");
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+  await verifyChange(root, { full: true });
+  await generateReport(root);
+  await generateRelease(root);
+  await execFileAsync("git", ["add", "."], { cwd: root });
+  await execFileAsync("git", ["commit", "-m", "feat: ship committed UI files"], { cwd: root });
+
+  await generateUiDashboard(root);
+
+  const html = await readFile(join(root, ".gsd", "ui", "index.html"), "utf8");
+  assert.match(html, /Committed Files/);
+  assert.match(html, /src\/feature\.js/);
+  assert.doesNotMatch(html, /No Git changes detected/);
+});
+
 test("generateDesktopApp writes a renderer that serializes command refreshes", async () => {
   const root = await tempRoot();
 

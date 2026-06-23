@@ -365,6 +365,7 @@ export async function getDiffSummary(root) {
     hasEvidence: status.hasEvidence,
     stagedFiles: gitStatus.stagedFiles,
     unstagedFiles: gitStatus.unstagedFiles,
+    committedFiles: await getLatestCommitFiles(root),
     recentCommits: await getRecentCommits(root),
   };
 }
@@ -1182,6 +1183,20 @@ async function getRecentCommits(root) {
   }
 }
 
+async function getLatestCommitFiles(root) {
+  try {
+    const prefix = await getGitPrefix(root);
+    const { stdout } = await execFileAsync("git", ["show", "--name-only", "--format=", "HEAD"], { cwd: root });
+    return stdout
+      .split("\n")
+      .map((file) => normalizeGitStatusPath(file.trim(), prefix))
+      .filter(Boolean)
+      .filter((file) => !isInternalDeliveryFile(file));
+  } catch {
+    return [];
+  }
+}
+
 function normalizeGitStatusPath(value, prefix = "") {
   const path = value.replace(/^"|"$/g, "").replace(/^.* -> /, "");
   if (prefix && path.startsWith(prefix)) {
@@ -1703,7 +1718,12 @@ function formatReleaseMessages(messages) {
 function buildUiHtml(model) {
   const changeTitle = model.activeChange?.title ?? "No active change";
   const changeSlug = model.activeChange?.slug ?? "none";
-  const changedFiles = [...new Set([...model.diff.stagedFiles, ...model.diff.unstagedFiles])];
+  const workingTreeFiles = [...new Set([...model.diff.stagedFiles, ...model.diff.unstagedFiles])];
+  const committedFiles = [...new Set(model.diff.committedFiles ?? [])];
+  const changedFiles = workingTreeFiles.length > 0 ? workingTreeFiles : committedFiles;
+  const changedFilesTitle = workingTreeFiles.length > 0 ? "Changed Files" : "Committed Files";
+  const changedFilesEmptyText =
+    model.diff.recentCommits.length > 0 ? "No project files detected in latest commit." : "No Git changes detected.";
   const stages = [
     ["Spec", model.specStatus.proposal && model.specStatus.tasks],
     ["Validate", model.validation.ok],
@@ -1830,9 +1850,9 @@ function buildUiHtml(model) {
 
     <section class="split">
       <div class="panel">
-        <h2>Changed Files</h2>
+        <h2>${changedFilesTitle}</h2>
         <div class="files">
-          ${(changedFiles.length ? changedFiles : ["No Git changes detected."]).map((file) => `<div class="row">${escapeHtml(file)}</div>`).join("")}
+          ${(changedFiles.length ? changedFiles : [changedFilesEmptyText]).map((file) => `<div class="row">${escapeHtml(file)}</div>`).join("")}
         </div>
       </div>
       <div class="panel">
