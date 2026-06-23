@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 const PACKAGE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const DEFAULT_WORKFLOW = {
@@ -501,7 +501,7 @@ export async function generateExamples(root) {
     `${JSON.stringify(
       {
         name: "gsd-node-basic-example",
-        version: "0.3.0",
+        version: "0.3.1",
         type: "module",
         private: true,
         scripts: {
@@ -1690,7 +1690,7 @@ function formatAuditTrail(result) {
 function buildDesktopPackageJson() {
   return {
     name: "gsd-desktop",
-    version: "0.3.0",
+    version: "0.3.1",
     private: true,
     main: "main.js",
     scripts: {

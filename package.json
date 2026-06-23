@@ -1,6 +1,6 @@
 {
   "name": "shipspec",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Spec-to-ship workflow for AI-assisted software delivery.",
   "type": "module",
   "private": false,
@@ -16,6 +16,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shipspec-dev/ShipSpec.git"
+  },
+  "homepage": "https://github.com/shipspec-dev/ShipSpec#readme",
+  "bugs": {
+    "url": "https://github.com/shipspec-dev/ShipSpec/issues"
   },
   "bin": {
     "gsd": "bin/gsd.mjs"

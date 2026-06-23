@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Updated package metadata and public links for the `shipspec-dev` GitHub organization.
+
 ## 0.3.0
 
 - Added ShipSpec intake, contract, room, audit, and deliver commands.

@@ -130,7 +130,7 @@ test("runCli supports help and version for an installable CLI", async () => {
 
   const version = await runCli(["--version"], { cwd: root });
   assert.equal(version.exitCode, 0);
-  assert.match(version.stdout, /0\.3\.0/);
+  assert.match(version.stdout, /0\.3\.1/);
 });
 
 test("runCli skill path prints source and default install target", async () => {
