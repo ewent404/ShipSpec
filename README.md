@@ -17,9 +17,7 @@ gsd run "Add user profile page"
 open .gsd/ui/index.html
 ```
 
-`gsd run` is the AGI-style operator path: it turns a goal into mission state, reasoning, risk, an AI-ready prompt, a context pack, and a refreshed dashboard. Run `gsd run` again later to continue from the current ShipSpec state.
-
-That single command routes plain text into ShipSpec quickstart: it initializes ShipSpec, detects project checks, writes shared agent instructions, starts the feature spec, validates it, and generates the ShipSpec Cockpit dashboard.
+`gsd run` is the AGI-style operator path: it initializes and configures ShipSpec when needed, starts or reuses mission state, validates, writes the reasoning, prompt, and pack, refreshes the UI, and prints the next action.
 
 For smaller changes, skip the agent instruction ceremony:
 
