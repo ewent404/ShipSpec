@@ -31,6 +31,14 @@ gsd spec
 gsd validate
 ```
 
+For the goal-driven path, prefer:
+
+```bash
+gsd run "<user request or ticket title>"
+```
+
+`gsd run` prepares or continues the local mission, generates reasoning, prompt, context pack, risk, and UI artifacts, and prints the next best action.
+
 If there is no active change, create the ShipSpec package from the user's request:
 
 ```bash
