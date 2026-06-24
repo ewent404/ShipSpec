@@ -131,10 +131,11 @@ gsd operate "JIRA-123 Add invoice export"
 To hand the active ShipSpec change into Codex Plan mode, generate a focused prompt:
 
 ```bash
+gsd decision "Approved +10 XP streak bonus formula"
 gsd prompt
 ```
 
-That writes `.gsd/prompts/<change>.md` and prints a ready-to-paste prompt that tells Codex what ShipSpec files to read, what to plan, what tests to propose, and where to stop for approval before coding.
+`gsd decision` records human approvals under `.gsd/decisions/<change>.md`. `gsd prompt` writes `.gsd/prompts/<change>.md` and prints a ready-to-paste prompt that tells Codex what ShipSpec files to read, what human decisions were made, what to plan, what tests to propose, and where to stop for approval before coding.
 
 The intended agent workflow is:
 
@@ -238,6 +239,7 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 | `gsd memory [--json]` | Inspect project memory, patterns, lessons, reflections, and loop actions. |
 | `gsd reason [--json]` | Generate local adaptive reasoning from spec, workflow, project signals, and memory. |
 | `gsd operate [--dry-run] [--json] <request>` | Run the safe delivery control loop and write an operation report without editing code. |
+| `gsd decision <human decision>` | Record a human approval or product choice for the active change. |
 | `gsd prompt [--json]` | Generate a Codex Plan mode prompt from the active ShipSpec change. |
 | `gsd deliver <request>` | Prepare intake, spec, contract, room, and validation in one command. |
 | `gsd ui` | Generate a static pixel dashboard under `.gsd/ui/index.html`. |

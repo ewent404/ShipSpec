@@ -47,10 +47,11 @@ gsd operate "<user request or ticket title>"
 When the user wants Codex Plan mode to think before coding, generate the active change prompt:
 
 ```bash
+gsd decision "<approved human choice, if one was given>"
 gsd prompt
 ```
 
-Use the generated prompt as the Plan mode handoff. ShipSpec owns facts and files; Codex Plan mode owns reasoning and the implementation plan.
+Use `gsd decision` for explicit human approvals or product choices before regenerating the prompt. Use the generated prompt as the Plan mode handoff. ShipSpec owns facts and files; Codex Plan mode owns reasoning and the implementation plan.
 
 If a change already exists but needs missing artifacts:
 

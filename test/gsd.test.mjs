@@ -24,6 +24,7 @@ import {
   getDiffSummary,
   getStatus,
   initWorkspace,
+  recordDecision,
   runOperation,
   runLoop,
   listAgentMessages,
@@ -575,6 +576,41 @@ test("runCli operate exposes safe operator command with json output", async () =
   assert.match(help.stdout, /operate/);
 });
 
+test("recordDecision stores human decisions for the active change", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Decision Memory");
+
+  const result = await recordDecision(root, "Approved +10 XP streak bonus formula");
+
+  assert.equal(result.ok, true);
+  assert.equal(result.activeChange.slug, "decision-memory");
+  assert.equal(await exists(join(root, ".gsd", "decisions", "decision-memory.md")), true);
+  assert.match(result.message, /Decision recorded/);
+
+  const decision = await readFile(join(root, ".gsd", "decisions", "decision-memory.md"), "utf8");
+  assert.match(decision, /# Decisions: Decision Memory/);
+  assert.match(decision, /Approved \+10 XP streak bonus formula/);
+  assert.match(decision, /Human decision/);
+});
+
+test("runCli decision records decisions and validates input", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Decision Cli");
+
+  const missing = await runCli(["decision"], { cwd: root });
+  assert.equal(missing.exitCode, 1);
+  assert.match(missing.stdout, /Usage: gsd decision/);
+
+  const text = await runCli(["decision", "Approved", "Plan", "A"], { cwd: root });
+  assert.equal(text.exitCode, 0);
+  assert.match(text.stdout, /Decision recorded/);
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /decision/);
+});
+
 test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec state", async () => {
   const root = await tempRoot();
   await initWorkspace(root);
@@ -596,6 +632,18 @@ test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec sta
   assert.match(result.prompt, /\.gsd\/operations\/add-prompt-bridge\.md/);
   assert.match(result.prompt, /Wait for approval before coding/);
   assert.match(result.prompt, /gsd verify --full/);
+});
+
+test("generatePlanPrompt includes recorded human decisions", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Prompt Decisions");
+  await recordDecision(root, "Approved +10 XP streak bonus formula");
+
+  const result = await generatePlanPrompt(root);
+
+  assert.match(result.prompt, /Human Decisions/);
+  assert.match(result.prompt, /Approved \+10 XP streak bonus formula/);
 });
 
 test("runCli prompt prints Plan mode prompt and supports json output", async () => {

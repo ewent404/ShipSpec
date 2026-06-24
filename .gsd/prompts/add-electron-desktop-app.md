@@ -11,6 +11,10 @@ Read these ShipSpec files:
 - openspec/changes/add-electron-desktop-app/tasks.md
 - .gsd/reasoning/add-electron-desktop-app.md
 
+Human Decisions:
+
+- 2026-06-24T09:50:18.112Z Human decision: Approved gsd decision command for recording human approvals in ShipSpec prompts
+
 In Codex Plan mode:
 
 - Summarize the requested scope in plain language.

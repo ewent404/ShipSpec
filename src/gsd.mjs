@@ -1146,6 +1146,7 @@ export async function generatePlanPrompt(root) {
   const activeChange = await requireActiveChange(root);
   const slug = activeChange.slug;
   const promptPath = join(root, ".gsd", "prompts", `${slug}.md`);
+  const decisions = await readDecisionEntries(root, slug);
   const contextFiles = [
     `openspec/changes/${slug}/proposal.md`,
     `openspec/changes/${slug}/tasks.md`,
@@ -1159,7 +1160,7 @@ export async function generatePlanPrompt(root) {
     if (await exists(join(root, relativePath))) existingContextFiles.push(relativePath);
   }
 
-  const prompt = buildPlanPromptMarkdown({ activeChange, contextFiles: existingContextFiles });
+  const prompt = buildPlanPromptMarkdown({ activeChange, contextFiles: existingContextFiles, decisions });
 
   await mkdir(join(root, ".gsd", "prompts"), { recursive: true });
   await writeFile(promptPath, prompt);
@@ -1170,7 +1171,45 @@ export async function generatePlanPrompt(root) {
     prompt,
     promptPath,
     contextFiles: existingContextFiles,
+    decisions,
     message: `Prompt written to .gsd/prompts/${slug}.md`,
+  };
+}
+
+export async function recordDecision(root, decision) {
+  await initWorkspace(root);
+  const activeChange = await requireActiveChange(root);
+  const text = decision.trim();
+
+  if (!text) {
+    return {
+      ok: false,
+      activeChange,
+      message: "Usage: gsd decision <human decision or approval>",
+    };
+  }
+
+  const decisionPath = join(root, ".gsd", "decisions", `${activeChange.slug}.md`);
+  const existing = await readTextIfExists(decisionPath);
+  const initialContent = [
+    `# Decisions: ${activeChange.title}`,
+    "",
+    `Change: ${activeChange.slug}`,
+    "",
+    "## Human Decisions",
+    "",
+  ].join("\n");
+  const content = existing || initialContent;
+
+  await mkdir(join(root, ".gsd", "decisions"), { recursive: true });
+  await writeFile(decisionPath, `${content.trimEnd()}\n- ${new Date().toISOString()} Human decision: ${text}\n`);
+
+  return {
+    ok: true,
+    activeChange,
+    decisionPath,
+    decision: text,
+    message: `Decision recorded in .gsd/decisions/${activeChange.slug}.md`,
   };
 }
 
@@ -1496,6 +1535,11 @@ export async function runCli(argv, options = {}) {
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
+    if (command === "decision") {
+      const result = await recordDecision(cwd, rest.join(" "));
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
     if (command === "prompt") {
       const result = await generatePlanPrompt(cwd);
       if (rest.includes("--json")) return cliResult(0, `${JSON.stringify(result, null, 2)}\n`);
@@ -1766,6 +1810,12 @@ async function getOperationUiState(root, slug) {
     nextActions: extractMarkdownBulletsAfterHeading(operationContent, "Next Action").slice(0, 3),
     safety: extractMarkdownBulletsAfterHeading(operationContent, "Safety").slice(0, 3),
   };
+}
+
+async function readDecisionEntries(root, slug) {
+  const decisionPath = join(root, ".gsd", "decisions", `${slug}.md`);
+  const decisionContent = await readTextSnippetIfExists(decisionPath, 16_000);
+  return extractMarkdownBulletsAfterHeading(decisionContent, "Human Decisions").slice(-6);
 }
 
 async function readMemoryArtifacts(root, relativeDir) {
@@ -2446,7 +2496,7 @@ function buildOperationMarkdown({ activeChange, delivery, reasoning, loop, ui, o
   ].join("\n");
 }
 
-function buildPlanPromptMarkdown({ activeChange, contextFiles }) {
+function buildPlanPromptMarkdown({ activeChange, contextFiles, decisions }) {
   return [
     "Use $shipspec.",
     "",
@@ -2458,6 +2508,10 @@ function buildPlanPromptMarkdown({ activeChange, contextFiles }) {
     "Read these ShipSpec files:",
     "",
     ...formatBulletList(contextFiles, "No ShipSpec context files found."),
+    "",
+    "Human Decisions:",
+    "",
+    ...formatBulletList(decisions, "No recorded human decisions yet."),
     "",
     "In Codex Plan mode:",
     "",
@@ -3067,6 +3121,7 @@ function usage() {
     "  memory [--json]",
     "  reason [--json]",
     "  operate [--dry-run] [--json] <request>",
+    "  decision <human decision>",
     "  prompt [--json]",
     "  deliver <request>",
     "  desktop",

@@ -10,6 +10,7 @@
 - Added `gsd deliver --adaptive` to include reasoning during initial package creation.
 - Added `gsd operate` for a safe delivery control loop that writes operation reports without editing code.
 - Added `gsd prompt` to generate Codex Plan mode prompts from active ShipSpec context.
+- Added `gsd decision` to record human approvals and include them in generated prompts.
 - Kept reflection local-only, bounded, and free of raw verification log copying.
 
 ## 0.3.1
