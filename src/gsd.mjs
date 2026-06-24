@@ -1593,7 +1593,25 @@ export async function runCli(argv, options = {}) {
       return cliResult(0, `${await formatOperatorGuide(cwd)}\n`);
     }
 
-    if (command === "--help" || command === "-h" || command === "help") {
+    if (command === "--help" || command === "-h") {
+      return cliResult(0, beginnerUsage());
+    }
+
+    if (command === "help") {
+      return cliResult(0, rest[0] === "advanced" ? usage() : beginnerUsage());
+    }
+
+    if (command === "fix") {
+      const result = await quickstartProject(cwd, rest.join(" "), { light: true });
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
+    if (command === "ask") {
+      const result = await generateContextPack(cwd);
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
+    if (command === "advanced") {
       return cliResult(0, usage());
     }
 
@@ -3708,6 +3726,30 @@ function cliResult(exitCode, stdout) {
     stdout,
     stderr: "",
   };
+}
+
+function beginnerUsage() {
+  return [
+    "ShipSpec",
+    "",
+    "Main:",
+    "  gsd",
+    '  gsd "Feature request"',
+    "  gsd fix <small fix>",
+    "  gsd ship",
+    "  gsd share",
+    "  gsd ask",
+    "  gsd ui",
+    "",
+    "Common:",
+    "  gsd next",
+    "  gsd verify --full",
+    "  gsd report",
+    "",
+    "More:",
+    "  gsd help advanced",
+    "",
+  ].join("\n");
 }
 
 function usage() {

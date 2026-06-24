@@ -207,6 +207,28 @@ test("runCli share aliases pack", async () => {
   assert.equal(await exists(join(root, ".gsd", "packs", "share-pack.md")), true);
 });
 
+test("runCli ask aliases share", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Ask Pack");
+
+  const result = await runCli(["ask"], { cwd: root });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /\.gsd\/packs\/ask-pack\.md/);
+});
+
+test("runCli fix aliases light quickstart", async () => {
+  const root = await tempRoot();
+
+  const result = await runCli(["fix", "Navbar", "Spacing"], { cwd: root });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /Mode: light/);
+  assert.match(result.stdout, /navbar-spacing/);
+  assert.equal(await exists(join(root, "AGENTS.md")), false);
+});
+
 test("runCli ship runs ready verification, validation, and report", async () => {
   const root = await tempRoot();
   await initWorkspace(root);
@@ -232,14 +254,18 @@ test("runCli supports help and version for an installable CLI", async () => {
 
   const help = await runCli(["--help"], { cwd: root });
   assert.equal(help.exitCode, 0);
-  assert.match(help.stdout, /Usage: gsd <command>/);
-  assert.match(help.stdout, /Daily path:/);
-  assert.match(help.stdout, /quickstart \[--light\] <feature>/);
-  assert.match(help.stdout, /Verification:/);
-  assert.match(help.stdout, /AI workflow:/);
-  assert.match(help.stdout, /Handoff:/);
-  assert.match(help.stdout, /doctor/);
-  assert.match(help.stdout, /skill <path\|install>/);
+  assert.match(help.stdout, /ShipSpec/);
+  assert.match(help.stdout, /Main:/);
+  assert.match(help.stdout, /gsd "Feature request"/);
+  assert.match(help.stdout, /gsd ship/);
+  assert.match(help.stdout, /gsd help advanced/);
+  assert.doesNotMatch(help.stdout, /quickstart \[--light\] <feature>/);
+
+  const advanced = await runCli(["help", "advanced"], { cwd: root });
+  assert.equal(advanced.exitCode, 0);
+  assert.match(advanced.stdout, /Usage: gsd <command>/);
+  assert.match(advanced.stdout, /quickstart \[--light\] <feature>/);
+  assert.match(advanced.stdout, /skill <path\|install>/);
 
   const version = await runCli(["--version"], { cwd: root });
   assert.equal(version.exitCode, 0);
@@ -564,7 +590,7 @@ test("runCli reflect and learn expose self-improving loop commands", async () =>
   assert.equal(learn.exitCode, 0);
   assert.match(learn.stdout, /Lesson written/);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /reflect/);
   assert.match(help.stdout, /learn/);
 });
@@ -630,7 +656,7 @@ test("runCli loop exposes the one-pass self-improvement loop", async () => {
   assert.equal(loop.exitCode, 1);
   assert.match(loop.stdout, /Loop stopped with next actions/);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /loop/);
 });
 
@@ -677,7 +703,7 @@ test("runCli operate exposes safe operator command with json output", async () =
   assert.equal(parsed.activeChange.slug, "add-cli-operator");
   assert.equal(parsed.operation.operationPath.endsWith(".gsd/operations/add-cli-operator.md"), true);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /operate/);
 });
 
@@ -712,7 +738,7 @@ test("runCli decision records decisions and validates input", async () => {
   assert.equal(text.exitCode, 0);
   assert.match(text.stdout, /Decision recorded/);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /decision/);
 });
 
@@ -760,7 +786,7 @@ test("runCli review exposes decision-aware review checklist", async () => {
   assert.equal(parsed.activeChange.slug, "review-cli");
   assert.equal(parsed.reviewPath.endsWith(".gsd/reviews/review-cli.md"), true);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /review/);
 });
 
@@ -862,7 +888,7 @@ test("runCli prompt prints Plan mode prompt and supports json output", async () 
   assert.equal(parsed.activeChange.slug, "prompt-cli");
   assert.equal(parsed.promptPath.endsWith(".gsd/prompts/prompt-cli.md"), true);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /prompt/);
 });
 
@@ -909,7 +935,7 @@ test("runCli pack writes and prints the context pack path", async () => {
   assert.match(result.stdout, /\.gsd\/packs\/pack-cli\.md/);
   assert.equal(await exists(join(root, ".gsd", "packs", "pack-cli.md")), true);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /pack/);
 });
 
@@ -951,7 +977,7 @@ test("runCli memory prints memory summary and supports json output", async () =>
   const parsed = JSON.parse(json.stdout);
   assert.equal(parsed.lessons[0].slug, "memory-cli");
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /memory/);
 });
 
@@ -1008,7 +1034,7 @@ test("runCli reason prints reasoning path and supports json output", async () =>
   assert.equal(parsed.activeChange.slug, "reason-cli");
   assert.equal(parsed.recommendedWorkflow.includes("gsd loop"), true);
 
-  const help = await runCli(["--help"], { cwd: root });
+  const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /reason/);
 });
 

@@ -314,6 +314,15 @@ gsd ui
 
 Use `gsd next` when you want ShipSpec to explain the next best action.
 
+Natural shortcuts:
+
+```bash
+gsd fix "Navbar spacing"  # light quickstart for small fixes
+gsd ask                   # same as gsd share
+```
+
+`gsd --help` shows the beginner surface. `gsd help advanced` shows every command.
+
 <details>
 <summary>Advanced command reference</summary>
 
