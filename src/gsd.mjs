@@ -1457,6 +1457,43 @@ export async function generatePlanPrompt(root) {
   };
 }
 
+export async function generateCodexHandoff(root) {
+  await initWorkspace(root);
+  const activeChange = await requireActiveChange(root);
+  const slug = activeChange.slug;
+
+  if (!(await exists(join(root, ".gsd", "prompts", `${slug}.md`)))) {
+    await generatePlanPrompt(root);
+  }
+  if (!(await exists(join(root, ".gsd", "packs", `${slug}.md`)))) {
+    await generateContextPack(root);
+  }
+
+  const candidateFiles = [
+    ".gsd/current.json",
+    `.gsd/missions/${slug}.md`,
+    `.gsd/prompts/${slug}.md`,
+    `.gsd/packs/${slug}.md`,
+    `openspec/changes/${slug}/proposal.md`,
+    `openspec/changes/${slug}/tasks.md`,
+  ];
+  const files = [];
+
+  for (const relativePath of candidateFiles) {
+    if (await exists(join(root, relativePath))) files.push(relativePath);
+  }
+
+  const handoff = buildCodexHandoffMarkdown({ activeChange, files });
+
+  return {
+    ok: true,
+    activeChange,
+    files,
+    handoff,
+    message: handoff,
+  };
+}
+
 export async function recordDecision(root, decision) {
   await initWorkspace(root);
   const activeChange = await requireActiveChange(root);
@@ -1739,6 +1776,11 @@ export async function runCli(argv, options = {}) {
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
+    if (command === "codex") {
+      const result = await generateCodexHandoff(cwd);
+      return cliResult(result.ok ? 0 : 1, `${result.handoff}\n`);
+    }
+
     if (command === "ship") {
       const result = await runShipFlow(cwd);
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
@@ -1979,6 +2021,7 @@ async function formatOperatorGuide(root) {
     "",
     "Main commands:",
     "- gsd run <request>      AGI-style delivery operator",
+    "- gsd codex              Print no-copy Codex handoff",
     '- gsd "Feature request"  Start a new feature',
     "- gsd next               Show the next best action",
     "- gsd ship               Verify, validate ready, and report",
@@ -2128,8 +2171,27 @@ function formatMissionResult({ mission }) {
   if (mission.artifacts.pack) lines.push(`Pack: ${mission.artifacts.pack}`);
   if (mission.artifacts.report) lines.push(`Report: ${mission.artifacts.report}`);
   if (mission.artifacts.ui) lines.push(`UI: ${mission.artifacts.ui}`);
+  lines.push("Codex: gsd codex");
 
   return lines.join("\n");
+}
+
+function buildCodexHandoffMarkdown({ activeChange, files }) {
+  return [
+    "Use $shipspec and implement the active ShipSpec mission.",
+    `Mission: ${activeChange.slug}`,
+    "",
+    "Read these files from the repo:",
+    ...formatBulletList(files, "No ShipSpec files found."),
+    "",
+    "Do not ask me to paste long context. Use repo files as the source of truth.",
+    "Stop before coding if the mission/spec is unclear.",
+    "",
+    "After implementation, run:",
+    "- gsd run",
+    "- gsd ship",
+    "- gsd share",
+  ].join("\n");
 }
 
 async function getRiskSummary(root, next = null) {
@@ -4001,6 +4063,7 @@ function beginnerUsage() {
     "Main:",
     "  gsd",
     "  gsd run <request>",
+    "  gsd codex",
     '  gsd "Feature request"',
     "  gsd fix <small fix>",
     "  gsd ship",
@@ -4040,6 +4103,7 @@ function usage() {
     "  diff",
     "",
     "AI workflow:",
+    "  codex",
     "  deliver <request>",
     "  intake <request>",
     "  contract",

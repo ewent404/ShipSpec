@@ -17,6 +17,7 @@ import {
   generateAgentInstructions,
   generateCiWorkflow,
   generateRelease,
+  generateCodexHandoff,
   generatePlanPrompt,
   generateContextPack,
   generateReasoning,
@@ -180,6 +181,7 @@ test("runMission prepares an AGI-style mission for a new request", async () => {
   assert.match(result.message, /Mission: add-checkout-discount/);
   assert.match(result.message, /Phase: planning-ready/);
   assert.match(result.message, /Next: open \.gsd\/prompts\/add-checkout-discount\.md/);
+  assert.match(result.message, /Codex: gsd codex/);
   assert.equal(result.next.command, "open .gsd/prompts/add-checkout-discount.md");
   assert.match(result.next.reason, /AI coding pass/);
   assert.equal(await exists(join(root, ".gsd", "missions", "add-checkout-discount.json")), true);
@@ -962,6 +964,44 @@ test("runCli prompt prints Plan mode prompt and supports json output", async () 
 
   const help = await runCli(["help", "advanced"], { cwd: root });
   assert.match(help.stdout, /prompt/);
+});
+
+test("generateCodexHandoff prints a compact no-copy handoff from mission files", async () => {
+  const root = await tempRoot();
+  await runMission(root, "Pixel Card Dashboard");
+
+  const result = await generateCodexHandoff(root);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.activeChange.slug, "pixel-card-dashboard");
+  assert.match(result.handoff, /Use \$shipspec and implement the active ShipSpec mission\./);
+  assert.match(result.handoff, /Mission: pixel-card-dashboard/);
+  assert.match(result.handoff, /\.gsd\/current\.json/);
+  assert.match(result.handoff, /\.gsd\/missions\/pixel-card-dashboard\.md/);
+  assert.match(result.handoff, /\.gsd\/prompts\/pixel-card-dashboard\.md/);
+  assert.match(result.handoff, /\.gsd\/packs\/pixel-card-dashboard\.md/);
+  assert.match(result.handoff, /openspec\/changes\/pixel-card-dashboard\/proposal\.md/);
+  assert.match(result.handoff, /openspec\/changes\/pixel-card-dashboard\/tasks\.md/);
+  assert.match(result.handoff, /Do not ask me to paste long context/);
+  assert.match(result.handoff, /Use repo files as the source of truth/);
+});
+
+test("runCli codex prints no-copy handoff and appears in help", async () => {
+  const root = await tempRoot();
+  await runMission(root, "Codex Bridge");
+
+  const result = await runCli(["codex"], { cwd: root });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /Use \$shipspec and implement the active ShipSpec mission\./);
+  assert.match(result.stdout, /Mission: codex-bridge/);
+  assert.match(result.stdout, /\.gsd\/prompts\/codex-bridge\.md/);
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /gsd codex/);
+
+  const advanced = await runCli(["help", "advanced"], { cwd: root });
+  assert.match(advanced.stdout, /codex/);
 });
 
 test("generateContextPack writes a portable AI handoff pack", async () => {

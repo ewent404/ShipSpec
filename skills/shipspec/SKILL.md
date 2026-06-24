@@ -39,6 +39,14 @@ gsd run "<user request or ticket title>"
 
 `gsd run` prepares or continues the local mission, generates reasoning, prompt, context pack, risk, and UI artifacts, and prints the next best action.
 
+For no-copy Codex handoff, use:
+
+```bash
+gsd codex
+```
+
+`gsd codex` prints a short instruction that tells Codex to use `$shipspec` and read the active mission, prompt, pack, proposal, and tasks from repo files. Prefer this over asking the user to paste long context.
+
 If there is no active change, create the ShipSpec package from the user's request:
 
 ```bash

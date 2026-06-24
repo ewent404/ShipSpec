@@ -14,10 +14,13 @@ From any project folder:
 
 ```bash
 gsd run "Add user profile page"
+gsd codex
 open .gsd/ui/index.html
 ```
 
 `gsd run` is the AGI-style operator path: it initializes and configures ShipSpec when needed, starts or reuses mission state, validates, writes the reasoning, prompt, and pack, refreshes the UI, and prints the next action.
+
+`gsd codex` prints a short no-copy handoff for Codex. It tells Codex to read the mission, prompt, pack, proposal, and tasks from repo files instead of asking you to paste long context.
 
 For smaller changes, skip the agent instruction ceremony:
 
@@ -189,7 +192,15 @@ gsd operate "JIRA-123 Add invoice export"
 
 `gsd operate` prepares the adaptive package when a request is provided, runs reasoning, runs one safe verification/reflection loop, refreshes the pixel dashboard, and writes `.gsd/operations/<change>.md`. It does not edit code, deploy, or call external services.
 
-To hand the active ShipSpec change into an AI planning pass, generate a focused prompt:
+To hand the active ShipSpec change into Codex without pasting long context, generate the short handoff:
+
+```bash
+gsd codex
+```
+
+`gsd codex` prints a compact instruction that tells Codex to use the ShipSpec skill and read the active mission files directly from the repo.
+
+To hand the active ShipSpec change into any AI planning pass, generate a focused prompt:
 
 ```bash
 gsd decision "Approved +10 XP streak bonus formula"
@@ -294,11 +305,12 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 
 ## Commands To Remember
 
-Most people only need five commands:
+Most people only need this small command set:
 
 ```bash
 gsd
 gsd run "Feature request"
+gsd codex
 gsd ship
 gsd share
 gsd ui
@@ -308,6 +320,7 @@ gsd ui
 | --- | --- |
 | `gsd` | Show the ShipSpec Operator with next action, risk level, risk reason, and a small menu. |
 | `gsd run "Feature request"` | Start or continue an AGI-style delivery mission with reasoning, risk, prompt, pack, and UI artifacts. |
+| `gsd codex` | Print a no-copy Codex handoff that points Codex at repo-local ShipSpec files. |
 | `gsd ship` | Run full verification, ready validation, and report generation. |
 | `gsd share` | Create a portable AI context pack with spec, evidence, risk, and next action. |
 | `gsd ui` | Refresh the ShipSpec Cockpit dashboard. |
@@ -358,6 +371,7 @@ The full command set is still available for teams that want explicit control.
 | Command | Purpose |
 | --- | --- |
 | `gsd deliver <request>` | Prepare intake, spec, contract, room, and validation in one command. |
+| `gsd codex` | Print a no-copy Codex handoff for the active ShipSpec mission. |
 | `gsd intake <request>` | Create a local request intake record. |
 | `gsd contract` | Create the active change implementation contract. |
 | `gsd room` | Create role-based agent room files for the active change. |
