@@ -421,6 +421,28 @@ export async function generateReport(root) {
   };
 }
 
+export async function generateReview(root) {
+  const activeChange = await requireActiveChange(root);
+  const summary = await getDiffSummary(root);
+  const decisions = await readDecisionEntries(root, activeChange.slug);
+  const evidenceSummary = await readEvidenceSummary(root, activeChange.slug);
+  const changedFiles = [...new Set([...summary.stagedFiles, ...summary.unstagedFiles, ...(summary.committedFiles ?? [])])];
+  const reviewPath = join(root, ".gsd", "reviews", `${activeChange.slug}.md`);
+
+  await mkdir(join(root, ".gsd", "reviews"), { recursive: true });
+  await writeFile(reviewPath, buildReviewMarkdown({ activeChange, decisions, changedFiles, evidenceSummary }));
+
+  return {
+    ok: true,
+    activeChange,
+    decisions,
+    changedFiles,
+    evidenceSummary,
+    reviewPath,
+    message: `Review written to .gsd/reviews/${activeChange.slug}.md`,
+  };
+}
+
 export async function generateRelease(root) {
   const activeChange = await requireActiveChange(root);
   const specValidation = await validateChange(root, { ready: false });
@@ -1440,6 +1462,12 @@ export async function runCli(argv, options = {}) {
 
     if (command === "report") {
       const result = await generateReport(cwd);
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
+    if (command === "review") {
+      const result = await generateReview(cwd);
+      if (rest.includes("--json")) return cliResult(0, `${JSON.stringify(result, null, 2)}\n`);
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
@@ -2539,6 +2567,42 @@ function buildPlanPromptMarkdown({ activeChange, contextFiles, decisions }) {
   ].join("\n");
 }
 
+function buildReviewMarkdown({ activeChange, decisions, changedFiles, evidenceSummary }) {
+  return [
+    `# Review: ${activeChange.title}`,
+    "",
+    `Change: ${activeChange.slug}`,
+    `Generated: ${new Date().toISOString()}`,
+    "",
+    "## Human Decisions To Verify",
+    "",
+    ...formatBulletList(decisions, "No recorded human decisions."),
+    "",
+    "## Changed Files",
+    "",
+    ...formatChangedFiles(changedFiles),
+    "",
+    "## Verification Evidence",
+    "",
+    ...formatBulletList(evidenceSummary, "No verification evidence found. Run `gsd verify --full`."),
+    "",
+    "## Reviewer Checklist",
+    "",
+    "- [ ] Confirm implementation follows each recorded human decision.",
+    "- [ ] Confirm changed files match the active ShipSpec scope.",
+    "- [ ] Confirm tests cover approved behavior and edge cases.",
+    "- [ ] Confirm `gsd verify --full` passed.",
+    "- [ ] Confirm `gsd validate --ready` passed before release.",
+    "",
+    "## Safety",
+    "",
+    "- Review is generated from local ShipSpec state only.",
+    "- Human reviewer owns final judgment.",
+    "- No code edits, network calls, or deployments are performed.",
+    "",
+  ].join("\n");
+}
+
 function buildDesktopPackageJson() {
   return {
     name: "gsd-desktop",
@@ -3106,6 +3170,7 @@ function usage() {
     "  validate [--ready]",
     "  diff",
     "  report",
+    "  review [--json]",
     "  release",
     "  examples",
     "  self-test",

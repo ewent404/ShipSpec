@@ -67,6 +67,7 @@ Before claiming implementation is done:
 
 ```bash
 gsd verify --full
+gsd review
 gsd loop
 gsd audit
 gsd validate --ready

@@ -19,6 +19,7 @@ import {
   generateRelease,
   generatePlanPrompt,
   generateReasoning,
+  generateReview,
   getMemorySummary,
   getSpecStatus,
   getDiffSummary,
@@ -609,6 +610,54 @@ test("runCli decision records decisions and validates input", async () => {
 
   const help = await runCli(["--help"], { cwd: root });
   assert.match(help.stdout, /decision/);
+});
+
+test("generateReview writes a decision-aware review checklist", async () => {
+  const root = await tempRoot();
+  await execFileAsync("git", ["init"], { cwd: root });
+  await initWorkspace(root);
+  await startChange(root, "Review Decisions");
+  await recordDecision(root, "Approved +10 XP streak bonus formula");
+  await writeFile(join(root, "src.js"), "export const streakBonus = 10;\n");
+  await writeFile(
+    join(root, ".gsd", "workflow.json"),
+    JSON.stringify({ checks: [{ name: "unit", command: "node -e \"process.exit(0)\"", required: true }] }, null, 2),
+  );
+  await verifyChange(root, { full: true });
+
+  const result = await generateReview(root);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.activeChange.slug, "review-decisions");
+  assert.equal(await exists(join(root, ".gsd", "reviews", "review-decisions.md")), true);
+  assert.equal(result.decisions.some((decision) => decision.includes("+10 XP")), true);
+
+  const review = await readFile(join(root, ".gsd", "reviews", "review-decisions.md"), "utf8");
+  assert.match(review, /# Review: Review Decisions/);
+  assert.match(review, /Human Decisions To Verify/);
+  assert.match(review, /Approved \+10 XP streak bonus formula/);
+  assert.match(review, /src\.js/);
+  assert.match(review, /PASS unit/);
+  assert.match(review, /Confirm implementation follows each recorded human decision/);
+});
+
+test("runCli review exposes decision-aware review checklist", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Review Cli");
+
+  const text = await runCli(["review"], { cwd: root });
+  assert.equal(text.exitCode, 0);
+  assert.match(text.stdout, /Review written/);
+
+  const json = await runCli(["review", "--json"], { cwd: root });
+  assert.equal(json.exitCode, 0);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.activeChange.slug, "review-cli");
+  assert.equal(parsed.reviewPath.endsWith(".gsd/reviews/review-cli.md"), true);
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /review/);
 });
 
 test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec state", async () => {
