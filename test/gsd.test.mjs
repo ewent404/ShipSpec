@@ -888,6 +888,12 @@ test("generateUiDashboard writes a single-page pixel dashboard", async () => {
   assert.match(html, /Workflow/);
   assert.match(html, /Human \+ AI Context/);
   assert.match(html, /Ship Evidence/);
+  assert.match(html, /Copy command/);
+  assert.match(html, /data-command="gsd validate"/);
+  assert.match(html, /data-command="gsd verify --full"/);
+  assert.match(html, /data-command="gsd report"/);
+  assert.match(html, /data-command="gsd next"/);
+  assert.match(html, /navigator\.clipboard\.writeText/);
   assert.match(html, /Pixel Dashboard/);
   assert.match(html, /Spec/);
   assert.match(html, /Verify/);
