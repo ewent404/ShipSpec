@@ -292,20 +292,32 @@ ShipSpec writes workflow state inside the project where you run it:
 
 These files are meant to make delivery visible and reviewable. Commit them when your team wants the workflow history in Git.
 
-## Command Reference
+## Commands To Remember
 
-Most people only need the operator surface:
+Most people only need five commands:
 
 ```bash
 gsd
 gsd "Feature request"
-gsd next
 gsd ship
 gsd share
 gsd ui
 ```
 
-The full command set is grouped by job below.
+| Command | Purpose |
+| --- | --- |
+| `gsd` | Show the ShipSpec Operator with the next action and a small menu. |
+| `gsd "Feature request"` | Start a feature without remembering `quickstart`. |
+| `gsd ship` | Run full verification, ready validation, and report generation. |
+| `gsd share` | Create a portable AI context pack. |
+| `gsd ui` | Refresh the ShipSpec Cockpit dashboard. |
+
+Use `gsd next` when you want ShipSpec to explain the next best action.
+
+<details>
+<summary>Advanced command reference</summary>
+
+The full command set is still available for teams that want explicit control.
 
 ### Daily Path
 
@@ -383,6 +395,8 @@ The full command set is grouped by job below.
 | `gsd skill install` | Install the bundled ShipSpec skill into the local Codex skills directory. |
 | `gsd audit` | Show the ShipSpec trail from intake through done. |
 | `gsd desktop` | Generate an Electron desktop app under `apps/desktop/`. |
+
+</details>
 
 ## Adapters
 
