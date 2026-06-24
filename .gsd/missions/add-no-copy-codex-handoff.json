@@ -1,0 +1,44 @@
+{
+  "title": "Add no-copy Codex handoff",
+  "slug": "add-no-copy-codex-handoff",
+  "request": "Add no-copy Codex handoff",
+  "phase": "review-ready",
+  "risk": {
+    "level": "medium",
+    "reasons": [
+      "verification skipped checks",
+      "next action pending: gsd operate"
+    ]
+  },
+  "nextAction": {
+    "command": "open .gsd/reports/add-no-copy-codex-handoff.md",
+    "reason": "Verification evidence passed and the review report is ready.",
+    "otherCommands": [
+      "gsd share",
+      "gsd ui"
+    ]
+  },
+  "validation": {
+    "spec": "pass",
+    "ready": "pass",
+    "errors": []
+  },
+  "artifacts": {
+    "mission": ".gsd/missions/add-no-copy-codex-handoff.md",
+    "missionJson": ".gsd/missions/add-no-copy-codex-handoff.json",
+    "reasoning": ".gsd/reasoning/add-no-copy-codex-handoff.md",
+    "prompt": ".gsd/prompts/add-no-copy-codex-handoff.md",
+    "pack": ".gsd/packs/add-no-copy-codex-handoff.md",
+    "report": ".gsd/reports/add-no-copy-codex-handoff.md",
+    "reflection": null,
+    "ui": ".gsd/ui/index.html"
+  },
+  "safety": {
+    "localOnly": true,
+    "externalActions": false,
+    "destructiveActions": false,
+    "deployment": false,
+    "maxLoops": 1
+  },
+  "generatedAt": "2026-06-24T15:30:52.364Z"
+}

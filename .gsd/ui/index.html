@@ -137,12 +137,12 @@
     <header>
       <div>
         <h1>ShipSpec Cockpit</h1>
-        <p class="slug">Add Electron Desktop App / add-electron-desktop-app</p>
+        <p class="slug">Add no-copy Codex handoff / add-no-copy-codex-handoff</p>
       </div>
       <div class="top-meta">
         <span class="chip pass">Spec PASS</span>
         <span class="chip pass">Ready PASS</span>
-        <span class="chip">Branch main</span>
+        <span class="chip">Branch codex/no-copy-codex-handoff</span>
       </div>
     </header>
 
@@ -162,28 +162,28 @@
     </section>
 
     <section aria-label="Readiness" class="readiness">
-      <div class="ready-chip"><strong>Spec</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Reasoning</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Operation</strong><span class="chip warn">WAIT</span></div><div class="ready-chip"><strong>Decisions</strong><span class="chip pass">1</span></div><div class="ready-chip"><strong>Prompt</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Evidence</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Review</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Report</strong><span class="chip pass">PASS</span></div>
+      <div class="ready-chip"><strong>Spec</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Reasoning</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Operation</strong><span class="chip warn">WAIT</span></div><div class="ready-chip"><strong>Decisions</strong><span class="chip warn">0</span></div><div class="ready-chip"><strong>Prompt</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Evidence</strong><span class="chip pass">PASS</span></div><div class="ready-chip"><strong>Review</strong><span class="chip warn">WAIT</span></div><div class="ready-chip"><strong>Report</strong><span class="chip pass">PASS</span></div>
     </section>
 
     <section class="cockpit">
       <div class="panel section">
         <h2>Workflow</h2>
         <div class="rows">
-          <div class="row">Active change: add-electron-desktop-app</div>
+          <div class="row">Active change: add-no-copy-codex-handoff</div>
           <div class="row">Evidence: present</div>
           <div class="row">Report: present</div>
-          <div class="row">Release: present</div>
+          <div class="row">Release: missing</div>
         </div>
 
         <h3>Pipeline</h3>
         <div class="pipeline">
-          <div class="stage"><strong>Spec</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Validate</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Verify</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Report</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Release</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Ready</strong><span class="chip pass">PASS</span></div>
+          <div class="stage"><strong>Spec</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Validate</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Verify</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Report</strong><span class="chip pass">PASS</span></div><div class="stage"><strong>Release</strong><span class="chip warn">WAIT</span></div><div class="stage"><strong>Ready</strong><span class="chip pass">PASS</span></div>
         </div>
 
         <h3>Self-Improving Loop</h3>
         <div class="rows">
           <div class="row">Loop: missing</div>
-          <div class="row">Reflection: missing</div>
+          <div class="row">Reflection: present</div>
           <div class="row">Learn: skipped</div>
         </div>
 
@@ -194,7 +194,7 @@
 
         <h3>ShipSpec Audit</h3>
         <div class="rows">
-          <div class="row">WAIT Request intake</div><div class="row">PASS Spec</div><div class="row">WAIT Contract</div><div class="row">WAIT Agent room</div><div class="row">PASS Evidence</div><div class="row">PASS Report</div><div class="row">PASS Release</div><div class="row">WAIT Done</div>
+          <div class="row">WAIT Request intake</div><div class="row">PASS Spec</div><div class="row">WAIT Contract</div><div class="row">WAIT Agent room</div><div class="row">PASS Evidence</div><div class="row">PASS Report</div><div class="row">WAIT Release</div><div class="row">WAIT Done</div>
         </div>
       </div>
 
@@ -202,7 +202,7 @@
         <h2>Human + AI Context</h2>
         <h3>Human Decisions</h3>
         <div class="rows">
-          <div class="row">2026-06-24T09:50:18.112Z Human decision: Approved gsd decision command for recording human approvals in ShipSpec prompts</div>
+          <div class="row">No recorded human decisions.</div>
         </div>
 
         <h3>Adaptive Reasoning</h3>
@@ -220,12 +220,12 @@
         <h2>Ship Evidence</h2>
         <h3>Review</h3>
         <div class="rows">
-          <div class="row">Review: present</div><div class="row">Checklist: ready</div><div class="row">PASS lint (required: yes)</div><div class="row">PASS unit (required: yes)</div><div class="row">PASS typecheck (required: yes)</div><div class="row">PASS e2e (required: no)</div>
+          <div class="row">Review: missing</div><div class="row">Checklist: missing</div><div class="row">No review evidence summary recorded.</div>
         </div>
 
         <h3>Changed Files</h3>
         <div class="rows">
-          <div class="row">src/gsd.mjs</div><div class="row">test/gsd.test.mjs</div>
+          <div class="row">README.md</div><div class="row">skills/shipspec/SKILL.md</div><div class="row">src/gsd.mjs</div><div class="row">test/gsd.test.mjs</div>
         </div>
 
         <h3>Agent Inbox</h3>
