@@ -1332,9 +1332,10 @@ export async function runMission(root, request = "", options = {}) {
     },
   });
   const missionFiles = await writeMissionState(root, mission);
+  const preparedOk = prepared ? prepared.ok : true;
 
   return {
-    ok: specValidation.ok && ui.ok,
+    ok: specValidation.ok && ui.ok && preparedOk,
     activeChange,
     phase,
     risk,
