@@ -1,11 +1,30 @@
 # ShipSpec
 
-ShipSpec is a repo-local delivery workflow for AI-assisted software development. It turns a feature idea into a spec, task checklist, validation gate, verification evidence, review report, release handoff, and done report.
+ShipSpec is an agent-neutral delivery protocol for AI-assisted software development. It keeps feature scope, verification evidence, agent handoffs, and release notes inside the repo so humans and AI tools can work from the same facts.
 
 The command is intentionally short:
 
 ```bash
 gsd
+```
+
+## Try It In Two Minutes
+
+From any project folder:
+
+```bash
+gsd quickstart "Add user profile page"
+open .gsd/ui/index.html
+```
+
+That single command initializes ShipSpec, detects project checks, writes shared agent instructions, starts the feature spec, validates it, and generates the ShipSpec Cockpit dashboard.
+
+After coding:
+
+```bash
+gsd verify --full
+gsd validate --ready
+gsd report
 ```
 
 ## What It Helps With
@@ -22,7 +41,7 @@ gsd
 Pixel Quest Board is a small demo that shows ShipSpec coordinating a real feature:
 
 ```text
-Spec -> Codex implementation -> full verification -> evidence -> report -> done dashboard
+Spec -> AI/human implementation -> full verification -> evidence -> report -> done dashboard
 ```
 
 Demo repo:
@@ -59,7 +78,14 @@ Go to the project you want to manage:
 cd /path/to/your/project
 ```
 
-First-time setup:
+Fast path:
+
+```bash
+gsd quickstart "Add user profile page"
+gsd next
+```
+
+Manual setup, when you want each step visible:
 
 ```bash
 gsd init
@@ -136,22 +162,32 @@ gsd operate "JIRA-123 Add invoice export"
 
 `gsd operate` prepares the adaptive package when a request is provided, runs reasoning, runs one safe verification/reflection loop, refreshes the pixel dashboard, and writes `.gsd/operations/<change>.md`. It does not edit code, deploy, or call external services.
 
-To hand the active ShipSpec change into Codex Plan mode, generate a focused prompt:
+To hand the active ShipSpec change into an AI planning pass, generate a focused prompt:
 
 ```bash
 gsd decision "Approved +10 XP streak bonus formula"
 gsd prompt
 ```
 
-`gsd decision` records human approvals under `.gsd/decisions/<change>.md`. `gsd prompt` writes `.gsd/prompts/<change>.md` and prints a ready-to-paste prompt that tells Codex what ShipSpec files to read, what human decisions were made, what to plan, what tests to propose, and where to stop for approval before coding. After implementation, `gsd review` writes a decision-aware review checklist under `.gsd/reviews/<change>.md`.
+`gsd decision` records human approvals under `.gsd/decisions/<change>.md`. `gsd prompt` writes `.gsd/prompts/<change>.md` and prints a ready-to-paste prompt that tells an AI agent what ShipSpec files to read, what human decisions were made, what to plan, what tests to propose, and where to stop for approval before coding. After implementation, `gsd review` writes a decision-aware review checklist under `.gsd/reviews/<change>.md`.
 
 The intended agent workflow is:
 
 ```text
-Request -> ShipSpec package -> Codex implementation -> verification -> report -> release -> done
+Request -> ShipSpec package -> AI/human implementation -> verification -> report -> release -> done
 ```
 
-## Codex Skill
+## Agent Integrations
+
+ShipSpec is not tied to one coding agent. `gsd agents` writes shared instructions for common agent surfaces:
+
+- `AGENTS.md` for OpenAI Codex and other AGENTS-aware tools
+- `CLAUDE.md` for Claude-style project instructions
+- `GEMINI.md` for Gemini-style project instructions
+- `.cursor/rules/gsd.mdc` for Cursor
+- `.agent/roles/` and `.agent/messages/` for planner, builder, tester, reviewer, and release handoffs
+
+### Codex Skill
 
 ShipSpec includes a Codex skill at:
 
@@ -183,12 +219,24 @@ The skill keeps the CLI as the engine:
 ShipSpec CLI -> ShipSpec skill -> agent workflow -> verified handoff
 ```
 
+Other agents can still use the same repo files and CLI commands without installing the Codex skill.
+
+## When Not To Use ShipSpec
+
+ShipSpec is useful when verification evidence, handoff notes, and repeatable agent context matter. It may be too much for:
+
+- tiny throwaway scripts
+- one-line fixes you can safely review in place
+- projects with no tests or review process yet
+- experiments where speed matters more than traceability
+
+For those cases, use your normal workflow. Bring ShipSpec in when the cost of confusion, missed checks, or weak handoff is higher than the setup.
+
 ## Daily Feature Flow
 
 ```bash
 cd /path/to/your/project
-gsd start "Add checkout discounts"
-gsd validate
+gsd quickstart "Add checkout discounts"
 
 # implement the feature
 
@@ -214,9 +262,7 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 Most people can start with the daily path and let `gsd next` guide the rest:
 
 ```bash
-gsd init
-gsd configure
-gsd start "Feature name"
+gsd quickstart "Feature name"
 gsd next
 gsd ui
 ```
@@ -228,6 +274,7 @@ The full command set is grouped by job below.
 | Command | Purpose |
 | --- | --- |
 | `gsd init` | Create `.gsd/`, `.agent/`, and `openspec/` folders. |
+| `gsd quickstart "Feature name"` | Initialize, configure, write agent instructions, start a spec, validate it, and generate the Cockpit. |
 | `gsd configure` | Detect existing package scripts and write `.gsd/workflow.json`. |
 | `gsd start "Feature name"` | Create an active change with proposal and tasks. |
 | `gsd status` | Show initialization, active change, and evidence status. |
@@ -256,7 +303,7 @@ The full command set is grouped by job below.
 | `gsd reason [--json]` | Generate local adaptive reasoning from spec, workflow, project signals, and memory. |
 | `gsd operate [--dry-run] [--json] <request>` | Run the safe delivery control loop and write an operation report without editing code. |
 | `gsd decision <human decision>` | Record a human approval or product choice for the active change. |
-| `gsd prompt [--json]` | Generate a Codex Plan mode prompt from the active ShipSpec change. |
+| `gsd prompt [--json]` | Generate an AI planning prompt from the active ShipSpec change. |
 | `gsd review [--json]` | Generate a decision-aware review checklist from local ShipSpec state. |
 
 ### Self-Improvement

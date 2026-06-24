@@ -129,6 +129,28 @@ test("runCli dispatches init, start, and status commands", async () => {
   assert.match(status.stdout, /Active change: invite-team-members/);
 });
 
+test("runCli quickstart prepares the low-ceremony project path", async () => {
+  const root = await tempRoot();
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({ scripts: { test: "node -e \"process.exit(0)\"" } }, null, 2),
+  );
+
+  const result = await runCli(["quickstart", "Add Team Invites"], { cwd: root });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /Quickstart ready/);
+  assert.match(result.stdout, /add-team-invites/);
+  assert.match(result.stdout, /gsd next/);
+  assert.equal(await exists(join(root, ".gsd", "workflow.json")), true);
+  assert.equal(await exists(join(root, "AGENTS.md")), true);
+  assert.equal(await exists(join(root, "CLAUDE.md")), true);
+  assert.equal(await exists(join(root, "GEMINI.md")), true);
+  assert.equal(await exists(join(root, ".cursor", "rules", "gsd.mdc")), true);
+  assert.equal(await exists(join(root, "openspec", "changes", "add-team-invites", "proposal.md")), true);
+  assert.equal(await exists(join(root, ".gsd", "ui", "index.html")), true);
+});
+
 test("runCli supports help and version for an installable CLI", async () => {
   const root = await tempRoot();
 
@@ -136,6 +158,7 @@ test("runCli supports help and version for an installable CLI", async () => {
   assert.equal(help.exitCode, 0);
   assert.match(help.stdout, /Usage: gsd <command>/);
   assert.match(help.stdout, /Daily path:/);
+  assert.match(help.stdout, /quickstart <feature>/);
   assert.match(help.stdout, /Verification:/);
   assert.match(help.stdout, /AI workflow:/);
   assert.match(help.stdout, /Handoff:/);
@@ -711,7 +734,7 @@ test("runCli next prints recommendation and supports json output", async () => {
   assert.match(help.stdout, /next/);
 });
 
-test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec state", async () => {
+test("generatePlanPrompt writes AI planning context from active ShipSpec state", async () => {
   const root = await tempRoot();
   await initWorkspace(root);
   await writeFile(
@@ -726,7 +749,7 @@ test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec sta
   assert.equal(result.activeChange.slug, "add-prompt-bridge");
   assert.equal(await exists(join(root, ".gsd", "prompts", "add-prompt-bridge.md")), true);
   assert.match(result.prompt, /Use \$shipspec\./);
-  assert.match(result.prompt, /Codex Plan mode/);
+  assert.match(result.prompt, /AI planning mode/);
   assert.match(result.prompt, /openspec\/changes\/add-prompt-bridge\/proposal\.md/);
   assert.match(result.prompt, /\.gsd\/reasoning\/add-prompt-bridge\.md/);
   assert.match(result.prompt, /\.gsd\/operations\/add-prompt-bridge\.md/);

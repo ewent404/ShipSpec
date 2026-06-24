@@ -392,7 +392,7 @@ export async function getNextRecommendation(root) {
     return buildNextRecommendation({
       activeChange,
       command: "gsd prompt",
-      reason: "Codex Plan mode prompt is missing.",
+      reason: "AI planning prompt is missing.",
       otherCommands: ["gsd decision", "gsd ui", "gsd status"],
     });
   }
@@ -832,6 +832,43 @@ export async function generateUiDashboard(root) {
     ok: true,
     message: "Pixel dashboard written to .gsd/ui/index.html",
     uiPath,
+  };
+}
+
+export async function quickstartProject(root, request) {
+  const title = request.trim();
+  if (!title) {
+    return {
+      ok: false,
+      message: "Usage: gsd quickstart <feature>",
+    };
+  }
+
+  const initialized = await initWorkspace(root);
+  const configured = await configureWorkflow(root);
+  const agents = await generateAgentInstructions(root);
+  const change = await startChange(root, title);
+  const validation = await validateChange(root, { ready: false });
+  const ui = await generateUiDashboard(root);
+  const next = await getNextRecommendation(root);
+  const ok = initialized.ok && configured.ok && agents.ok && change.ok && validation.ok && ui.ok;
+
+  return {
+    ok,
+    message: [
+      `Quickstart ready for ${change.change.slug}`,
+      `Spec: openspec/changes/${change.change.slug}`,
+      "Cockpit: .gsd/ui/index.html",
+      "Guide: gsd next",
+      `Next: ${next.command}`,
+    ].join("\n"),
+    initialized,
+    configured,
+    agents,
+    change,
+    validation,
+    ui,
+    next,
   };
 }
 
@@ -1496,6 +1533,11 @@ export async function runCli(argv, options = {}) {
     if (command === "init") {
       const result = await initWorkspace(cwd);
       return cliResult(0, `${result.message}\n`);
+    }
+
+    if (command === "quickstart") {
+      const result = await quickstartProject(cwd, rest.join(" "));
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
     if (command === "start") {
@@ -2684,7 +2726,7 @@ function buildPlanPromptMarkdown({ activeChange, contextFiles, decisions }) {
     `Active change: ${activeChange.title}`,
     `Slug: ${activeChange.slug}`,
     "",
-    "You are in Codex Plan mode. Use ShipSpec as the source of truth and prepare a plan before coding.",
+    "You are in AI planning mode. Use ShipSpec as the source of truth and prepare a plan before coding.",
     "",
     "Read these ShipSpec files:",
     "",
@@ -2694,7 +2736,7 @@ function buildPlanPromptMarkdown({ activeChange, contextFiles, decisions }) {
     "",
     ...formatBulletList(decisions, "No recorded human decisions yet."),
     "",
-    "In Codex Plan mode:",
+    "In AI planning mode:",
     "",
     "- Summarize the requested scope in plain language.",
     "- Identify likely affected files and project areas.",
@@ -3423,6 +3465,7 @@ function usage() {
     "",
     "Daily path:",
     "  init",
+    "  quickstart <feature>",
     "  configure",
     "  start <change title>",
     "  next [--json]",
