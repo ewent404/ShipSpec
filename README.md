@@ -13,9 +13,11 @@ gsd
 From any project folder:
 
 ```bash
-gsd "Add user profile page"
+gsd run "Add user profile page"
 open .gsd/ui/index.html
 ```
+
+`gsd run` is the AGI-style operator path: it turns a goal into mission state, reasoning, risk, an AI-ready prompt, a context pack, and a refreshed dashboard. Run `gsd run` again later to continue from the current ShipSpec state.
 
 That single command routes plain text into ShipSpec quickstart: it initializes ShipSpec, detects project checks, writes shared agent instructions, starts the feature spec, validates it, and generates the ShipSpec Cockpit dashboard.
 
@@ -88,7 +90,7 @@ cd /path/to/your/project
 Fast path:
 
 ```bash
-gsd quickstart "Add user profile page"
+gsd run "Add user profile page"
 gsd next
 ```
 
@@ -298,7 +300,7 @@ Most people only need five commands:
 
 ```bash
 gsd
-gsd "Feature request"
+gsd run "Feature request"
 gsd ship
 gsd share
 gsd ui
@@ -307,7 +309,7 @@ gsd ui
 | Command | Purpose |
 | --- | --- |
 | `gsd` | Show the ShipSpec Operator with next action, risk level, risk reason, and a small menu. |
-| `gsd "Feature request"` | Start a feature without remembering `quickstart`. |
+| `gsd run "Feature request"` | Start or continue an AGI-style delivery mission with reasoning, risk, prompt, pack, and UI artifacts. |
 | `gsd ship` | Run full verification, ready validation, and report generation. |
 | `gsd share` | Create a portable AI context pack with spec, evidence, risk, and next action. |
 | `gsd ui` | Refresh the ShipSpec Cockpit dashboard. |
@@ -333,7 +335,7 @@ The full command set is still available for teams that want explicit control.
 | Command | Purpose |
 | --- | --- |
 | `gsd` | Show the ShipSpec Operator with next action and the small command menu. |
-| `gsd "Feature request"` | Start a feature through quickstart without remembering the command name. |
+| `gsd run "Feature request"` | Start or continue an AGI-style delivery mission with reasoning, risk, prompt, pack, and UI artifacts. |
 | `gsd init` | Create `.gsd/`, `.agent/`, and `openspec/` folders. |
 | `gsd quickstart [--light] "Feature name"` | Initialize, configure, start a spec, validate it, and generate the Cockpit. Standard mode also writes agent instructions; light mode skips them. |
 | `gsd configure` | Detect existing package scripts and write `.gsd/workflow.json`. |

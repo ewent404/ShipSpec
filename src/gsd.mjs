@@ -1703,6 +1703,11 @@ export async function runCli(argv, options = {}) {
       return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
     }
 
+    if (command === "run") {
+      const result = await runMission(cwd, rest.join(" "));
+      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+    }
+
     if (command === "start") {
       const title = rest.join(" ").trim();
       if (!title) return cliResult(1, "Usage: gsd start <change title>\n");
@@ -1972,6 +1977,7 @@ async function formatOperatorGuide(root) {
     `Risk reason: ${risk.reasons.join("; ")}`,
     "",
     "Main commands:",
+    "- gsd run <request>      AGI-style delivery operator",
     '- gsd "Feature request"  Start a new feature',
     "- gsd next               Show the next best action",
     "- gsd ship               Verify, validate ready, and report",
@@ -3962,6 +3968,7 @@ function beginnerUsage() {
     "",
     "Main:",
     "  gsd",
+    "  gsd run <request>",
     '  gsd "Feature request"',
     "  gsd fix <small fix>",
     "  gsd ship",
@@ -3986,6 +3993,7 @@ function usage() {
     "",
     "Daily path:",
     "  init",
+    "  run [request]",
     '  "feature request"',
     "  quickstart [--light] <feature>",
     "  configure",
