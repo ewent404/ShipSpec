@@ -340,6 +340,111 @@ export async function getSpecStatus(root) {
   };
 }
 
+export async function getNextRecommendation(root) {
+  await initWorkspace(root);
+  const status = await getStatus(root);
+  const activeChange = status.activeChange;
+
+  if (!activeChange) {
+    return buildNextRecommendation({
+      command: 'gsd operate "<request>"',
+      reason: "No active change exists yet.",
+      otherCommands: ["gsd init", "gsd configure", "gsd status"],
+    });
+  }
+
+  const slug = activeChange.slug;
+  const specStatus = await getSpecStatus(root);
+  const validation = await validateChange(root, { ready: false });
+  const readyValidation = await validateChange(root, { ready: true });
+  const hasReasoning = await exists(join(root, ".gsd", "reasoning", `${slug}.md`));
+  const hasOperation = await exists(join(root, ".gsd", "operations", `${slug}.md`));
+  const hasPrompt = await exists(join(root, ".gsd", "prompts", `${slug}.md`));
+  const hasReview = await exists(join(root, ".gsd", "reviews", `${slug}.md`));
+  const hasReport = await exists(join(root, ".gsd", "reports", `${slug}.md`));
+  const hasUi = await exists(join(root, ".gsd", "ui", "index.html"));
+
+  if (!validation.ok) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd validate",
+      reason: `Spec needs attention: ${validation.errors[0]}`,
+      otherCommands: ["gsd spec", "gsd reason", "gsd ui"],
+    });
+  }
+  if (!hasReasoning) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd reason",
+      reason: "Adaptive reasoning is missing for the active change.",
+      otherCommands: ["gsd prompt", "gsd ui", "gsd status"],
+    });
+  }
+  if (!hasOperation) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd operate",
+      reason: "Operation report is missing for the active change.",
+      otherCommands: ["gsd prompt", "gsd verify --full", "gsd ui"],
+    });
+  }
+  if (!hasPrompt) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd prompt",
+      reason: "Codex Plan mode prompt is missing.",
+      otherCommands: ["gsd decision", "gsd ui", "gsd status"],
+    });
+  }
+  if (!specStatus.evidence) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd verify --full",
+      reason: "Verification evidence is missing.",
+      otherCommands: ["gsd prompt", "gsd review", "gsd ui"],
+    });
+  }
+  if (!hasReview) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd review",
+      reason: "Decision-aware review checklist is missing.",
+      otherCommands: ["gsd validate --ready", "gsd report", "gsd ui"],
+    });
+  }
+  if (!readyValidation.ok) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd validate --ready",
+      reason: `Ready validation needs attention: ${readyValidation.errors[0]}`,
+      otherCommands: ["gsd verify --full", "gsd review", "gsd ui"],
+    });
+  }
+  if (!hasReport) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd report",
+      reason: "Review report is missing.",
+      otherCommands: ["gsd review", "gsd release", "gsd ui"],
+    });
+  }
+  if (!hasUi) {
+    return buildNextRecommendation({
+      activeChange,
+      command: "gsd ui",
+      reason: "Pixel dashboard is missing.",
+      otherCommands: ["gsd status", "gsd report", "gsd release"],
+    });
+  }
+
+  return buildNextRecommendation({
+    activeChange,
+    command: "gsd release",
+    reason: "Core planning, verification, review, report, and dashboard artifacts are present.",
+    otherCommands: ["gsd done", "gsd ui", "gsd status"],
+  });
+}
+
 export async function validateChange(root, options = {}) {
   const status = await getSpecStatus(root);
   const errors = [];
@@ -1408,6 +1513,12 @@ export async function runCli(argv, options = {}) {
       );
     }
 
+    if (command === "next") {
+      const result = await getNextRecommendation(cwd);
+      if (rest.includes("--json")) return cliResult(0, `${JSON.stringify(result, null, 2)}\n`);
+      return cliResult(0, `${formatNextRecommendation(result)}\n`);
+    }
+
     if (command === "doctor") {
       const result = await doctorWorkspace(cwd);
       return cliResult(result.ok ? 0 : 1, `${formatDoctor(result.checks)}\n`);
@@ -1990,6 +2101,16 @@ async function requireActiveChange(root) {
   return activeChange;
 }
 
+function buildNextRecommendation({ activeChange = null, command, reason, otherCommands }) {
+  return {
+    ok: true,
+    activeChange,
+    command,
+    reason,
+    otherCommands,
+  };
+}
+
 async function readWorkflow(root) {
   const workflowPath = join(root, ".gsd", "workflow.json");
   if (!(await exists(workflowPath))) {
@@ -2278,6 +2399,19 @@ function formatDiffSummary(summary) {
     ...(summary.recentCommits.length === 0
       ? ["- No commits detected, or Git is unavailable."]
       : summary.recentCommits.map((commit) => `- ${commit.hash} ${commit.message}`)),
+  ].join("\n");
+}
+
+function formatNextRecommendation(result) {
+  return [
+    "Next recommended command:",
+    "",
+    result.command,
+    "",
+    `Reason: ${result.reason}`,
+    "",
+    "Other useful commands:",
+    ...result.otherCommands.map((command) => `- ${command}`),
   ].join("\n");
 }
 
@@ -3191,6 +3325,7 @@ function usage() {
     "  init",
     "  start <change title>",
     "  status",
+    "  next [--json]",
     "  doctor",
     "  detect",
     "  configure",

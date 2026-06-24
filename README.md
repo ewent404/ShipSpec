@@ -65,6 +65,7 @@ First-time setup:
 gsd init
 gsd configure
 gsd agents
+gsd next
 ```
 
 Start a feature:
@@ -209,6 +210,7 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 | `gsd configure` | Detect existing package scripts and write `.gsd/workflow.json`. |
 | `gsd start "Feature name"` | Create an active change with proposal and tasks. |
 | `gsd status` | Show initialization, active change, and evidence status. |
+| `gsd next [--json]` | Recommend the next ShipSpec command from current project state. |
 | `gsd doctor` | Check whether the repo has basics needed for reliable delivery. |
 | `gsd detect` | Detect runtime, package manager, framework, tests, and E2E tooling. |
 | `gsd agents` | Write agent role instructions and message-board folders. |

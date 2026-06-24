@@ -12,6 +12,7 @@
 - Added `gsd prompt` to generate Codex Plan mode prompts from active ShipSpec context.
 - Added `gsd decision` to record human approvals and include them in generated prompts.
 - Added `gsd review` to generate decision-aware review checklists from local ShipSpec state.
+- Added `gsd next` to recommend the next command from current ShipSpec state.
 - Kept reflection local-only, bounded, and free of raw verification log copying.
 
 ## 0.3.1

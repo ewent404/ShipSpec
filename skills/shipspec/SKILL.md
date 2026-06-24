@@ -26,6 +26,7 @@ From the project root, check the current state before editing:
 
 ```bash
 gsd status
+gsd next
 gsd spec
 gsd validate
 ```

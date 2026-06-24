@@ -21,6 +21,7 @@ import {
   generateReasoning,
   generateReview,
   getMemorySummary,
+  getNextRecommendation,
   getSpecStatus,
   getDiffSummary,
   getStatus,
@@ -658,6 +659,52 @@ test("runCli review exposes decision-aware review checklist", async () => {
 
   const help = await runCli(["--help"], { cwd: root });
   assert.match(help.stdout, /review/);
+});
+
+test("getNextRecommendation guides users with no active change", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+
+  const result = await getNextRecommendation(root);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.command, 'gsd operate "<request>"');
+  assert.match(result.reason, /No active change/);
+  assert.equal(result.otherCommands.includes("gsd status"), true);
+});
+
+test("getNextRecommendation guides active changes through missing artifacts", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Next Guide");
+
+  const first = await getNextRecommendation(root);
+  assert.equal(first.command, "gsd reason");
+  assert.match(first.reason, /Adaptive reasoning is missing/);
+
+  await generateReasoning(root);
+  const second = await getNextRecommendation(root);
+  assert.equal(second.command, "gsd operate");
+  assert.match(second.reason, /Operation report is missing/);
+});
+
+test("runCli next prints recommendation and supports json output", async () => {
+  const root = await tempRoot();
+  await initWorkspace(root);
+  await startChange(root, "Next Cli");
+
+  const text = await runCli(["next"], { cwd: root });
+  assert.equal(text.exitCode, 0);
+  assert.match(text.stdout, /Next recommended command/);
+  assert.match(text.stdout, /gsd reason/);
+
+  const json = await runCli(["next", "--json"], { cwd: root });
+  assert.equal(json.exitCode, 0);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.command, "gsd reason");
+
+  const help = await runCli(["--help"], { cwd: root });
+  assert.match(help.stdout, /next/);
 });
 
 test("generatePlanPrompt writes Codex Plan mode context from active ShipSpec state", async () => {
