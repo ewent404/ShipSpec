@@ -1289,6 +1289,67 @@ export async function runLoop(root) {
   };
 }
 
+export async function runMission(root, request = "", options = {}) {
+  await initWorkspace(root);
+
+  const title = request.trim();
+  const initialStatus = await getStatus(root);
+  if (!title && !initialStatus.activeChange) {
+    return {
+      ok: false,
+      phase: "needs-request",
+      message: "Usage: gsd run <request>",
+    };
+  }
+
+  const prepared = title ? await quickstartProject(root, title, { light: options.light ?? false }) : null;
+  const activeChange = await requireActiveChange(root);
+  const specValidation = await validateChange(root, { ready: false });
+  const reasoning = specValidation.ok ? await generateReasoning(root) : null;
+  const prompt = specValidation.ok ? await generatePlanPrompt(root) : null;
+  const pack = specValidation.ok ? await generateContextPack(root) : null;
+  const ui = await generateUiDashboard(root);
+  const next = await getNextRecommendation(root);
+  const risk = await getRiskSummary(root, next);
+  const phase = classifyMissionPhase({ specValidation, readyValidation: null, risk, hasRequest: Boolean(title) });
+
+  const mission = buildMissionState({
+    activeChange,
+    phase,
+    request: title || activeChange.title,
+    risk,
+    next,
+    specValidation,
+    readyValidation: null,
+    artifacts: {
+      mission: `.gsd/missions/${activeChange.slug}.md`,
+      missionJson: `.gsd/missions/${activeChange.slug}.json`,
+      reasoning: reasoning ? `.gsd/reasoning/${activeChange.slug}.md` : null,
+      prompt: prompt ? `.gsd/prompts/${activeChange.slug}.md` : null,
+      pack: pack ? `.gsd/packs/${activeChange.slug}.md` : null,
+      report: null,
+      ui: ".gsd/ui/index.html",
+    },
+  });
+  const missionFiles = await writeMissionState(root, mission);
+
+  return {
+    ok: specValidation.ok && ui.ok,
+    activeChange,
+    phase,
+    risk,
+    next,
+    prepared,
+    reasoning,
+    prompt,
+    pack,
+    ui,
+    mission,
+    missionFiles,
+    message: formatMissionResult({ mission, pack, report: null }),
+  };
+}
+
 export async function runOperation(root, request = "", options = {}) {
   await initWorkspace(root);
   const title = request.trim();
@@ -1912,6 +1973,116 @@ async function formatOperatorGuide(root) {
     "- gsd help advanced      Show every command",
     "",
   ].join("\n");
+}
+
+function classifyMissionPhase({ specValidation, readyValidation, risk, hasRequest }) {
+  if (!specValidation.ok) return "needs-spec";
+  if (risk.level === "high" && readyValidation && !readyValidation.ok) return "blocked-high-risk";
+  if (readyValidation?.ok) return "review-ready";
+  if (hasRequest) return "planning-ready";
+  return "implementation-ready";
+}
+
+function buildMissionState({ activeChange, phase, request, risk, next, specValidation, readyValidation, artifacts }) {
+  return {
+    title: activeChange.title,
+    slug: activeChange.slug,
+    request,
+    phase,
+    risk,
+    nextAction: {
+      command: next.command,
+      reason: next.reason,
+      otherCommands: next.otherCommands ?? [],
+    },
+    validation: {
+      spec: specValidation.ok ? "pass" : "fail",
+      ready: readyValidation ? (readyValidation.ok ? "pass" : "fail") : "not-run",
+      errors: [...specValidation.errors, ...(readyValidation?.errors ?? [])],
+    },
+    artifacts,
+    safety: {
+      localOnly: true,
+      externalActions: false,
+      destructiveActions: false,
+      deployment: false,
+      maxLoops: 1,
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+async function writeMissionState(root, mission) {
+  const missionDir = join(root, ".gsd", "missions");
+  const jsonPath = join(missionDir, `${mission.slug}.json`);
+  const markdownPath = join(missionDir, `${mission.slug}.md`);
+
+  await mkdir(missionDir, { recursive: true });
+  await writeFile(jsonPath, `${JSON.stringify(mission, null, 2)}\n`);
+  await writeFile(markdownPath, buildMissionMarkdown(mission));
+
+  return { jsonPath, markdownPath };
+}
+
+function buildMissionMarkdown(mission) {
+  return [
+    `# Mission: ${mission.title}`,
+    "",
+    `Slug: ${mission.slug}`,
+    `Phase: ${mission.phase}`,
+    `Risk: ${mission.risk.level}`,
+    `Generated: ${mission.generatedAt}`,
+    "",
+    "## Goal",
+    "",
+    mission.request,
+    "",
+    "## Next Action",
+    "",
+    `- Command: ${mission.nextAction.command}`,
+    `- Reason: ${mission.nextAction.reason}`,
+    "",
+    "## Risk Reasons",
+    "",
+    ...formatBulletList(mission.risk.reasons, "No risk reasons."),
+    "",
+    "## Artifacts",
+    "",
+    ...formatArtifactList(mission.artifacts),
+    "",
+    "## Safety",
+    "",
+    "- Local files only.",
+    "- No external services called.",
+    "- No destructive commands run.",
+    "- No deployment attempted.",
+    "- One controlled loop maximum per run.",
+    "",
+  ].join("\n");
+}
+
+function formatArtifactList(artifacts) {
+  return Object.entries(artifacts)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `- ${key}: ${value}`);
+}
+
+function formatMissionResult({ mission }) {
+  const lines = [
+    `Mission: ${mission.slug}`,
+    `Phase: ${mission.phase}`,
+    `Risk: ${mission.risk.level}`,
+    `Next: ${mission.nextAction.command}`,
+    `Why: ${mission.nextAction.reason}`,
+    `Mission file: ${mission.artifacts.mission}`,
+  ];
+
+  if (mission.artifacts.prompt) lines.push(`Prompt: ${mission.artifacts.prompt}`);
+  if (mission.artifacts.pack) lines.push(`Pack: ${mission.artifacts.pack}`);
+  if (mission.artifacts.report) lines.push(`Report: ${mission.artifacts.report}`);
+  if (mission.artifacts.ui) lines.push(`UI: ${mission.artifacts.ui}`);
+
+  return lines.join("\n");
 }
 
 async function getRiskSummary(root, next = null) {
