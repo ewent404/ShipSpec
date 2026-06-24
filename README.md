@@ -211,6 +211,20 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 
 ## Command Reference
 
+Most people can start with the daily path and let `gsd next` guide the rest:
+
+```bash
+gsd init
+gsd configure
+gsd start "Feature name"
+gsd next
+gsd ui
+```
+
+The full command set is grouped by job below.
+
+### Daily Path
+
 | Command | Purpose |
 | --- | --- |
 | `gsd init` | Create `.gsd/`, `.agent/`, and `openspec/` folders. |
@@ -218,41 +232,66 @@ These files are meant to make delivery visible and reviewable. Commit them when 
 | `gsd start "Feature name"` | Create an active change with proposal and tasks. |
 | `gsd status` | Show initialization, active change, and evidence status. |
 | `gsd next [--json]` | Recommend the next ShipSpec command from current project state. |
-| `gsd doctor` | Check whether the repo has basics needed for reliable delivery. |
-| `gsd detect` | Detect runtime, package manager, framework, tests, and E2E tooling. |
-| `gsd agents` | Write agent role instructions and message-board folders. |
-| `gsd message <role> <message>` | Post a handoff note for a role. |
-| `gsd inbox` | Read recent agent handoff notes. |
+| `gsd ui` | Generate the static ShipSpec Cockpit dashboard under `.gsd/ui/index.html`. |
+
+### Verification
+
+| Command | Purpose |
+| --- | --- |
 | `gsd spec` | Show proposal, tasks, acceptance criteria, verification plan, and evidence status. |
 | `gsd validate` | Block weak specs before implementation continues. |
 | `gsd verify` | Run configured fast checks and save evidence. |
 | `gsd verify --full` | Run all checks, including full-only E2E checks. |
 | `gsd validate --ready` | Require both spec quality and verification evidence. |
 | `gsd diff` | Summarize branch, changed files, evidence, and recent commits. |
+
+### AI Workflow
+
+| Command | Purpose |
+| --- | --- |
+| `gsd deliver <request>` | Prepare intake, spec, contract, room, and validation in one command. |
+| `gsd intake <request>` | Create a local request intake record. |
+| `gsd contract` | Create the active change implementation contract. |
+| `gsd room` | Create role-based agent room files for the active change. |
+| `gsd reason [--json]` | Generate local adaptive reasoning from spec, workflow, project signals, and memory. |
+| `gsd operate [--dry-run] [--json] <request>` | Run the safe delivery control loop and write an operation report without editing code. |
+| `gsd decision <human decision>` | Record a human approval or product choice for the active change. |
+| `gsd prompt [--json]` | Generate a Codex Plan mode prompt from the active ShipSpec change. |
+| `gsd review [--json]` | Generate a decision-aware review checklist from local ShipSpec state. |
+
+### Self-Improvement
+
+| Command | Purpose |
+| --- | --- |
+| `gsd reflect` | Write a local readiness critique with gaps, risks, and next actions. |
+| `gsd learn` | Save governed lessons and project patterns from the current change. |
+| `gsd loop` | Run one safe verify, reflect, and learn pass without editing code. |
+| `gsd memory [--json]` | Inspect project memory, patterns, lessons, reflections, and loop actions. |
+
+### Handoff
+
+| Command | Purpose |
+| --- | --- |
 | `gsd report` | Write a PR-ready review report under `.gsd/reports/`. |
 | `gsd release` | Write a release handoff under `.gsd/releases/`. |
 | `gsd done` | Write a final done report with evidence, changed files, and risks. |
+
+### Project Tools
+
+| Command | Purpose |
+| --- | --- |
+| `gsd doctor` | Check whether the repo has basics needed for reliable delivery. |
+| `gsd detect` | Detect runtime, package manager, framework, tests, and E2E tooling. |
+| `gsd agents` | Write agent role instructions and message-board folders. |
+| `gsd message <role> <message>` | Post a handoff note for a role. |
+| `gsd inbox` | Read recent agent handoff notes. |
 | `gsd ci` | Generate a GitHub Actions workflow from configured checks. |
 | `gsd examples` | Generate example projects. |
 | `gsd self-test` | Run ShipSpec health checks. |
 | `gsd adapters` | List the OpenSpec, Superpowers, GitHub, and project-script integration points. |
 | `gsd skill path` | Show the bundled ShipSpec skill source and default Codex install target. |
 | `gsd skill install` | Install the bundled ShipSpec skill into the local Codex skills directory. |
-| `gsd intake <request>` | Create a local request intake record. |
-| `gsd contract` | Create the active change implementation contract. |
-| `gsd room` | Create role-based agent room files for the active change. |
 | `gsd audit` | Show the ShipSpec trail from intake through done. |
-| `gsd reflect` | Write a local readiness critique with gaps, risks, and next actions. |
-| `gsd learn` | Save governed lessons and project patterns from the current change. |
-| `gsd loop` | Run one safe verify, reflect, and learn pass without editing code. |
-| `gsd memory [--json]` | Inspect project memory, patterns, lessons, reflections, and loop actions. |
-| `gsd reason [--json]` | Generate local adaptive reasoning from spec, workflow, project signals, and memory. |
-| `gsd operate [--dry-run] [--json] <request>` | Run the safe delivery control loop and write an operation report without editing code. |
-| `gsd decision <human decision>` | Record a human approval or product choice for the active change. |
-| `gsd prompt [--json]` | Generate a Codex Plan mode prompt from the active ShipSpec change. |
-| `gsd review [--json]` | Generate a decision-aware review checklist from local ShipSpec state. |
-| `gsd deliver <request>` | Prepare intake, spec, contract, room, and validation in one command. |
-| `gsd ui` | Generate the static ShipSpec Cockpit dashboard under `.gsd/ui/index.html`. |
 | `gsd desktop` | Generate an Electron desktop app under `apps/desktop/`. |
 
 ## Adapters

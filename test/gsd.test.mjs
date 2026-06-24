@@ -135,6 +135,10 @@ test("runCli supports help and version for an installable CLI", async () => {
   const help = await runCli(["--help"], { cwd: root });
   assert.equal(help.exitCode, 0);
   assert.match(help.stdout, /Usage: gsd <command>/);
+  assert.match(help.stdout, /Daily path:/);
+  assert.match(help.stdout, /Verification:/);
+  assert.match(help.stdout, /AI workflow:/);
+  assert.match(help.stdout, /Handoff:/);
   assert.match(help.stdout, /doctor/);
   assert.match(help.stdout, /skill <path\|install>/);
 
