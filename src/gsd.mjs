@@ -1807,17 +1807,19 @@ function uniqueCleanupCandidates(candidates) {
 
 function formatCleanResult(result) {
   if (result.candidates.length === 0) {
-    return "No safe cleanup candidates found.";
+    return "Nothing to clean. Active change and source files were not touched.";
   }
 
   const paths = result.candidates.map((candidate) => candidate.path);
   if (!result.applied) {
-    return ["Cleanup candidates:", ...paths.map((path) => `- ${path}`), "", "Nothing deleted. Run `gsd clean --apply` to remove."].join(
+    return ["Safe cleanup preview:", ...paths.map((path) => `- ${path}`), "", "No files deleted. To clean them, run: gsd clean --apply"].join(
       "\n",
     );
   }
 
-  return ["Removed cleanup candidates:", ...paths.map((path) => `- ${path}`)].join("\n");
+  return ["Cleaned ShipSpec demo/test files:", ...paths.map((path) => `- ${path}`), "", "Active change and source files were kept."].join(
+    "\n",
+  );
 }
 
 export async function runCli(argv, options = {}) {
