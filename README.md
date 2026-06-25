@@ -35,6 +35,13 @@ gsd share
 
 That is the main flow.
 
+To let ShipSpec learn from the finished work:
+
+```bash
+gsd learn
+gsd memory
+```
+
 ## Daily Flow
 
 ```bash
@@ -46,6 +53,7 @@ gsd codex
 
 gsd ship
 gsd share
+gsd learn
 ```
 
 Useful extras:
@@ -79,8 +87,10 @@ gsd share
 ShipSpec's basic idea:
 
 ```text
-request -> AI context -> implementation -> verification -> review notes
+request -> AI context -> implementation -> verification -> review notes -> memory
 ```
+
+After `gsd learn`, future `gsd codex` handoffs include local project memory such as common files, checks, and ship patterns.
 
 ## Install
 
@@ -101,6 +111,7 @@ Requirements:
 ShipSpec writes local workflow files:
 
 - `.gsd/` for missions, prompts, reports, evidence summaries, and UI
+- `.gsd/memory/` for learned project patterns such as common files, checks, and ship flow
 - `.agent/` for agent notes, roles, memory, and messages
 - `openspec/` for proposals and task checklists
 
@@ -132,7 +143,7 @@ gsd ui
 | `gsd` | Show next action. |
 | `gsd run "Feature"` | Start or continue work. |
 | `gsd codex` | Hand work to Codex without long paste. |
-| `gsd ship` | Verify and write review report. |
+| `gsd ship` | Verify, auto-review, and write report. |
 | `gsd share` | Create AI context pack. |
 | `gsd ui` | Refresh the local dashboard. |
 
@@ -199,9 +210,9 @@ The full command set is still available for teams that want explicit control.
 | Command | Purpose |
 | --- | --- |
 | `gsd reflect` | Write a local readiness critique with gaps, risks, and next actions. |
-| `gsd learn` | Save governed lessons and project patterns from the current change. |
+| `gsd learn` | Save structured project memory from the current change. |
 | `gsd loop` | Run one safe verify, reflect, and learn pass without editing code. |
-| `gsd memory [--json]` | Inspect project memory, patterns, lessons, reflections, and loop actions. |
+| `gsd memory [--json]` | Inspect common files, checks, risks, ship patterns, and memory artifacts. |
 
 ### Handoff
 
@@ -210,7 +221,7 @@ The full command set is still available for teams that want explicit control.
 | `gsd report` | Write a PR-ready review report under `.gsd/reports/`. |
 | `gsd release` | Write a release handoff under `.gsd/releases/`. |
 | `gsd done` | Write a final done report with evidence, changed files, and risks. |
-| `gsd ship` | Run `verify --full`, `validate --ready`, and `report` as one ready-to-review flow. |
+| `gsd ship` | Run `verify --full`, `validate --ready`, auto review, and report as one ready-to-review flow. |
 
 ### Project Tools
 
