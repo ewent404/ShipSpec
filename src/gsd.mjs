@@ -1902,8 +1902,12 @@ export async function runCli(argv, options = {}) {
     }
 
     if (command === "run") {
-      const result = await runMission(cwd, rest.join(" "));
-      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+      const open = rest.includes("--open");
+      const request = rest.filter((part) => part !== "--open").join(" ");
+      const result = await runMission(cwd, request);
+      if (result.ok && open) await openUiDashboard(cwd, options);
+      const openMessage = result.ok && open ? "\nOpened: .gsd/ui/index.html" : "";
+      return cliResult(result.ok ? 0 : 1, `${result.message}${openMessage}\n`);
     }
 
     if (command === "start") {
@@ -2140,8 +2144,10 @@ export async function runCli(argv, options = {}) {
     }
 
     if (command === "ui") {
+      const open = rest.includes("--open");
       const result = await generateUiDashboard(cwd);
-      return cliResult(result.ok ? 0 : 1, `${result.message}\n`);
+      if (result.ok && open) await openUiDashboard(cwd, options);
+      return cliResult(result.ok ? 0 : 1, `${formatUiResult(result, { opened: result.ok && open })}\n`);
     }
 
     if (command === "verify") {
@@ -2336,6 +2342,7 @@ function formatMissionResult({ mission }) {
   if (mission.artifacts.pack) lines.push(`Pack: ${mission.artifacts.pack}`);
   if (mission.artifacts.report) lines.push(`Report: ${mission.artifacts.report}`);
   if (mission.artifacts.ui) lines.push(`UI: ${mission.artifacts.ui}`);
+  if (mission.artifacts.ui) lines.push("Open dashboard: gsd ui --open");
   lines.push("Codex: gsd codex");
 
   return lines.join("\n");
@@ -4520,6 +4527,49 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+async function openPath(path, options = {}) {
+  if (options.opener) {
+    await options.opener(path);
+    return;
+  }
+
+  if (process.platform === "darwin") {
+    await execFileAsync("open", [path]);
+    return;
+  }
+
+  if (process.platform === "win32") {
+    await execFileAsync("cmd", ["/c", "start", "", path]);
+    return;
+  }
+
+  await execFileAsync("xdg-open", [path]);
+}
+
+async function openUiDashboard(root, options = {}) {
+  const uiPath = join(root, ".gsd", "ui", "index.html");
+  await openPath(uiPath, options);
+  return uiPath;
+}
+
+function formatUiResult(result, options = {}) {
+  const lines = [
+    "ShipSpec Command Center ready",
+    "",
+    "UI: .gsd/ui/index.html",
+    "",
+    "Open it:",
+    "  open .gsd/ui/index.html",
+    "",
+    "Or run:",
+    "  gsd ui --open",
+  ];
+
+  if (options.opened) lines.push("", "Opened: .gsd/ui/index.html");
+  if (!result.ok) lines.unshift(result.message);
+  return lines.join("\n");
+}
+
 function isLikelyUrl(value) {
   return /^https?:\/\//i.test(value);
 }
@@ -4546,6 +4596,7 @@ function beginnerUsage() {
     "  gsd share",
     "  gsd ask",
     "  gsd ui",
+    "  gsd ui --open",
     "",
     "Common:",
     "  gsd next",
@@ -4564,13 +4615,13 @@ function usage() {
     "",
     "Daily path:",
     "  init",
-    "  run [request]",
+    "  run [--open] [request]",
     '  "feature request"',
     "  quickstart [--light] <feature>",
     "  configure",
     "  start <change title>",
     "  next [--json]",
-    "  ui",
+    "  ui [--open]",
     "",
     "Verification:",
     "  spec",
