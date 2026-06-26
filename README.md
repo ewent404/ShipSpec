@@ -26,6 +26,12 @@ gsd codex
 
 Then open Codex and use the output from `gsd codex`.
 
+To open the visual Command Center immediately:
+
+```bash
+gsd run --open "Add user profile page"
+```
+
 After the feature is implemented:
 
 ```bash
@@ -51,12 +57,13 @@ gsd share
 Useful extras:
 
 ```bash
-gsd ui       # open .gsd/ui/index.html
+gsd ui       # refresh the local dashboard and show how to open it
+gsd ui --open # refresh and open the Command Center
 gsd next     # see next suggested action
 gsd clean    # preview demo/test files that can be removed
 ```
 
-`gsd ui` shows the ShipSpec Command Center: Start / Continue, Hand to AI, Ship, readiness score, evidence receipt, delivery timeline, and project memory in one local page.
+`gsd ui` shows the ShipSpec Command Center: Start / Continue, Hand to AI, Ship, readiness score, evidence receipt, delivery timeline, and project memory in one local page. Use `gsd ui --open` when you want ShipSpec to open it for you.
 
 For small fixes:
 
@@ -136,7 +143,8 @@ gsd ui
 | `gsd codex` | Hand work to Codex without long paste. |
 | `gsd ship` | Verify and write review report. |
 | `gsd share` | Create AI context pack. |
-| `gsd ui` | Refresh the local dashboard. |
+| `gsd ui` | Refresh the local dashboard and show open instructions. |
+| `gsd ui --open` | Refresh and open the Command Center. |
 
 Use `gsd next` when you want ShipSpec to explain the next best action.
 

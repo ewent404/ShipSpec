@@ -430,7 +430,7 @@ test("runCli supports the AGI-style run command", async () => {
 
   const advanced = await runCli(["help", "advanced"], { cwd: root });
   assert.equal(advanced.exitCode, 0);
-  assert.match(advanced.stdout, /run \[request\]/);
+  assert.match(advanced.stdout, /run \[--open\] \[request\]/);
 });
 
 test("runCli skill path prints source and default install target", async () => {
@@ -1541,7 +1541,43 @@ test("runCli ui prints generated dashboard path", async () => {
   const result = await runCli(["ui"], { cwd: root });
 
   assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /ShipSpec Command Center ready/);
   assert.match(result.stdout, /\.gsd\/ui\/index\.html/);
+  assert.match(result.stdout, /Open it:/);
+  assert.match(result.stdout, /open \.gsd\/ui\/index\.html/);
+  assert.match(result.stdout, /gsd ui --open/);
+});
+
+test("runCli ui --open opens the generated dashboard", async () => {
+  const root = await tempRoot();
+  const opened = [];
+  await initWorkspace(root);
+  await startChange(root, "Open CLI UI");
+
+  const result = await runCli(["ui", "--open"], {
+    cwd: root,
+    opener: async (path) => opened.push(path),
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /ShipSpec Command Center ready/);
+  assert.match(result.stdout, /Opened: \.gsd\/ui\/index\.html/);
+  assert.deepEqual(opened, [join(root, ".gsd", "ui", "index.html")]);
+});
+
+test("runCli run --open starts a mission and opens the dashboard", async () => {
+  const root = await tempRoot();
+  const opened = [];
+
+  const result = await runCli(["run", "--open", "Add", "Login", "Page"], {
+    cwd: root,
+    opener: async (path) => opened.push(path),
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /Mission: add-login-page/);
+  assert.match(result.stdout, /Open dashboard: gsd ui --open/);
+  assert.deepEqual(opened, [join(root, ".gsd", "ui", "index.html")]);
 });
 
 test("generateAgentInstructions creates cross-agent rules, roles, and message board folders", async () => {
